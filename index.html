@@ -172,6 +172,21 @@
   .status-error { background: var(--danger); color: white; }
   .status-processing { background: var(--primary); color: white; }
 
+  .data-persist-info {
+    background: var(--primary-light);
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .data-persist-info span { font-size: 0.85rem; color: var(--primary); font-weight: 600; }
+  .data-persist-info .btn-sm { height: 32px; }
+
   .controls {
     display: flex;
     flex-wrap: wrap;
@@ -466,6 +481,7 @@
     .form-grid { grid-template-columns: 1fr; }
     .actions-bar { gap: 0.5rem; }
     .card-body { font-size: 0.75rem; }
+    .data-persist-info { flex-direction: column; text-align: center; gap: 0.5rem; }
   }
   @media (max-width: 400px) {
     .stats-grid { grid-template-columns: 1fr; }
@@ -519,6 +535,14 @@
     <input type="file" class="file-input" id="file-input" multiple accept=".xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
   </div>
 
+  <div class="data-persist-info" id="persist-info" style="display:none;">
+    <span>💾 Data tersimpan otomatis. <strong id="persist-count">0</strong> baris data tersedia.</span>
+    <div style="display:flex; gap:0.5rem;">
+      <button class="btn btn-sm btn-primary" id="btn-restore">🔄 Restore Data</button>
+      <button class="btn btn-sm btn-danger" id="btn-clear-persist">🗑 Hapus Data Tersimpan</button>
+    </div>
+  </div>
+
   <div class="controls">
     <div class="control-group">
       <input type="text" id="search-input" placeholder="Cari NIK / KPJ / Nama..." style="flex:2; min-width:180px;">
@@ -534,7 +558,7 @@
       </select>
     </div>
     <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-      <button class="btn btn-sm" id="btn-reset">🔄 Reset</button>
+      <button class="btn btn-sm" id="btn-reset">🔄 Reset Filter</button>
       <button class="btn btn-sm" id="btn-refresh">🔃 Refresh</button>
     </div>
   </div>
@@ -550,7 +574,7 @@
 
   <div class="virtual-container" id="virtual-container">
     <div class="virtual-content" id="virtual-content">
-      <div class="empty-state">Belum ada data. Silakan upload file XLSX.</div>
+      <div class="empty-state">Belum ada data. Silakan upload file XLSX atau restore data yang tersimpan.</div>
     </div>
   </div>
 </div>
@@ -635,6 +659,11 @@
 (function() {
   'use strict';
 
+  const STORAGE_KEY_DATA = 'ekstrak_data_v2';
+  const STORAGE_KEY_STATE = 'ekstrak_state_v2';
+  const STORAGE_KEY_META = 'ekstrak_meta_v2';
+  const CHUNK_SIZE = 1000; // rows per chunk for localStorage
+
   const App = {
     rawData: [],
     hardFiltered: [],
@@ -649,8 +678,7 @@
     editingId: null,
     fileQueue: [],
     isProcessing: false,
-    BATCH_SIZE: 5000,
-    CHUNK_SIZE: 10000
+    dataLoaded: false
   };
 
   const $ = id => document.getElementById(id);
@@ -672,12 +700,27 @@
     toast: $('toast'),
     editModal: $('edit-modal'),
     themeToggle: $('theme-toggle'),
-    fileQueue: $('file-queue')
+    fileQueue: $('file-queue'),
+    persistInfo: $('persist-info'),
+    persistCount: $('persist-count')
   };
 
+  // ===== INIT =====
   loadState();
   applyTheme();
+  checkPersistedData();
   bindEvents();
+
+  function checkPersistedData() {
+    try {
+      const meta = JSON.parse(localStorage.getItem(STORAGE_KEY_META) || '{}');
+      if (meta && meta.count && meta.count > 0) {
+        els.persistInfo.style.display = 'flex';
+        els.persistCount.textContent = meta.count.toLocaleString('id-ID');
+        els.virtualContent.innerHTML = '<div class="empty-state">💾 Data tersedia di penyimpanan lokal. Klik "Restore Data" untuk memuat kembali.</div>';
+      }
+    } catch(e) {}
+  }
 
   function bindEvents() {
     els.uploadZone.addEventListener('click', () => els.fileInput.click());
@@ -711,6 +754,9 @@
     $('scroll-bottom').addEventListener('click', () => els.virtualContainer.scrollTo({top: els.virtualContainer.scrollHeight, behavior:'smooth'}));
     els.themeToggle.addEventListener('click', toggleTheme);
 
+    $('btn-restore').addEventListener('click', restoreData);
+    $('btn-clear-persist').addEventListener('click', clearPersistedData);
+
     els.virtualContainer.addEventListener('scroll', debounce(renderVirtual, 50));
     window.addEventListener('resize', debounce(renderVirtual, 100));
 
@@ -718,6 +764,101 @@
     $('btn-cancel').addEventListener('click', closeModal);
     $('btn-save').addEventListener('click', saveEdit);
     els.editModal.addEventListener('click', e => { if (e.target === els.editModal) closeModal(); });
+  }
+
+  // ===== PERSIST DATA =====
+  function persistData() {
+    try {
+      // Store in chunks to avoid localStorage limit
+      const data = App.rawData;
+      const totalChunks = Math.ceil(data.length / CHUNK_SIZE);
+
+      // Clear old chunks first
+      for (let i = 0; i < 1000; i++) {
+        const key = STORAGE_KEY_DATA + '_chunk_' + i;
+        if (localStorage.getItem(key) === null) break;
+        localStorage.removeItem(key);
+      }
+
+      // Store new chunks
+      for (let i = 0; i < totalChunks; i++) {
+        const chunk = data.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+        localStorage.setItem(STORAGE_KEY_DATA + '_chunk_' + i, JSON.stringify(chunk));
+      }
+
+      // Store metadata
+      localStorage.setItem(STORAGE_KEY_META, JSON.stringify({
+        count: data.length,
+        chunks: totalChunks,
+        timestamp: Date.now(),
+        date: new Date().toLocaleString('id-ID')
+      }));
+
+      els.persistInfo.style.display = 'flex';
+      els.persistCount.textContent = data.length.toLocaleString('id-ID');
+    } catch(e) {
+      console.warn('Failed to persist data:', e);
+      showToast('⚠️ Data terlalu besar untuk disimpan otomatis. Gunakan export untuk backup.');
+    }
+  }
+
+  function restoreData() {
+    try {
+      showLoading(true, 'Memuat data dari penyimpanan lokal...');
+
+      const meta = JSON.parse(localStorage.getItem(STORAGE_KEY_META) || '{}');
+      if (!meta || !meta.count) {
+        showLoading(false);
+        showToast('Tidak ada data tersimpan');
+        return;
+      }
+
+      const chunks = meta.chunks || 0;
+      let restoredData = [];
+
+      for (let i = 0; i < chunks; i++) {
+        const chunkStr = localStorage.getItem(STORAGE_KEY_DATA + '_chunk_' + i);
+        if (chunkStr) {
+          const chunk = JSON.parse(chunkStr);
+          restoredData = restoredData.concat(chunk);
+        }
+        updateProgress(Math.floor((i / chunks) * 100));
+      }
+
+      App.rawData = restoredData;
+      App.selected.clear();
+      App.dataLoaded = true;
+
+      applyPipeline();
+      showLoading(false);
+      showToast('✅ ' + restoredData.length.toLocaleString('id-ID') + ' baris data berhasil dipulihkan');
+    } catch(e) {
+      console.error(e);
+      showLoading(false);
+      showToast('Gagal memulihkan data: ' + e.message);
+    }
+  }
+
+  function clearPersistedData() {
+    if (!confirm('Yakin hapus semua data tersimpan? Data tidak bisa dikembalikan.')) return;
+
+    try {
+      // Remove all chunks
+      for (let i = 0; i < 1000; i++) {
+        const key = STORAGE_KEY_DATA + '_chunk_' + i;
+        if (localStorage.getItem(key) === null) break;
+        localStorage.removeItem(key);
+      }
+      localStorage.removeItem(STORAGE_KEY_META);
+
+      els.persistInfo.style.display = 'none';
+      App.rawData = [];
+      App.selected.clear();
+      applyPipeline();
+      showToast('Data tersimpan dihapus');
+    } catch(e) {
+      showToast('Gagal menghapus data');
+    }
   }
 
   // ===== FILE QUEUE SYSTEM =====
@@ -760,7 +901,6 @@
       '</div>';
     }).join('');
     els.fileQueue.innerHTML = html;
-    // Auto-scroll to bottom
     els.fileQueue.scrollTop = els.fileQueue.scrollHeight;
   }
 
@@ -810,19 +950,21 @@
       renderQueue();
       updateProgress(Math.floor((processedCount / totalFiles) * 100));
 
-      // Yield to browser every file to prevent lag
       await new Promise(r => requestAnimationFrame(r));
       await new Promise(r => setTimeout(r, 50));
     }
 
-    // Remove done items after a delay
     setTimeout(() => {
       App.fileQueue = App.fileQueue.filter(item => item.status === 'error');
       renderQueue();
     }, 3000);
 
     App.isProcessing = false;
+    App.dataLoaded = true;
     showLoading(false);
+
+    // Persist data after successful load
+    persistData();
 
     App.selected.clear();
     applyPipeline();
@@ -873,7 +1015,6 @@
         if (h === 'STATUSAKUN' || h === 'STATUS_AKUN') idx.status = i;
       });
 
-      // Process in chunks to prevent UI freeze
       const dataRows = rows.slice(1);
       for (let i = 0; i < dataRows.length; i++) {
         const row = dataRows[i];
@@ -910,7 +1051,6 @@
 
   // ===== PIPELINE =====
   function applyPipeline() {
-    // Use requestIdleCallback or setTimeout for large datasets to prevent UI freeze
     if (App.rawData.length > 50000) {
       showLoading(true, 'Memproses ' + App.rawData.length.toLocaleString('id-ID') + ' baris...');
       setTimeout(() => {
@@ -1031,7 +1171,11 @@
     if (!data.length) {
       content.style.paddingTop = '0';
       content.style.paddingBottom = '0';
-      content.innerHTML = '<div class="empty-state">Tidak ada data yang memenuhi filter.</div>';
+      if (App.dataLoaded || App.rawData.length > 0) {
+        content.innerHTML = '<div class="empty-state">Tidak ada data yang memenuhi filter.</div>';
+      } else {
+        content.innerHTML = '<div class="empty-state">Belum ada data. Silakan upload file XLSX atau restore data yang tersimpan.</div>';
+      }
       return;
     }
 
@@ -1127,6 +1271,7 @@
     App.rawData = App.rawData.filter(r => r._id !== id);
     App.selected.delete(id);
     applyPipeline();
+    persistData(); // Re-persist after deletion
     showToast('Data dihapus');
   }
 
@@ -1143,6 +1288,7 @@
     App.rawData = App.rawData.filter(r => !App.selected.has(r._id));
     App.selected.clear();
     applyPipeline();
+    persistData(); // Re-persist after deletion
     showToast('Data terpilih dihapus');
   }
 
@@ -1229,6 +1375,7 @@
     row.STATUS_AKUN = $('edit-status').value.trim();
     row.PESAN_PENGKINIAN = $('edit-pesan').value.trim();
     applyPipeline();
+    persistData(); // Re-persist after edit
     closeModal();
     showToast('Perubahan disimpan');
   }
@@ -1255,7 +1402,7 @@
 
   function saveState() {
     try {
-      localStorage.setItem('ekstrak_state_v1', JSON.stringify({
+      localStorage.setItem(STORAGE_KEY_STATE, JSON.stringify({
         filters: App.filters,
         sort: App.sort,
         isDark: App.isDark
@@ -1264,7 +1411,7 @@
   }
   function loadState() {
     try {
-      const s = JSON.parse(localStorage.getItem('ekstrak_state_v1') || '{}');
+      const s = JSON.parse(localStorage.getItem(STORAGE_KEY_STATE) || '{}');
       if (s.filters) App.filters = s.filters;
       if (s.sort) App.sort = s.sort;
       if (s.isDark) App.isDark = s.isDark;
