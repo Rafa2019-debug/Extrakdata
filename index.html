@@ -1,1451 +1,1602 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>WEB EKSTRAK DATA XLSX</title>
-<!-- 
-  OFFLINE INSTRUCTIONS:
-  Untuk penggunaan 100% offline tanpa internet:
-  1. Download https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js
-  2. Simpan file JS di folder yang sama dengan index.html
-  3. Ganti baris script src di bawah menjadi: <script src="./xlsx.full.min.js"><\/script>
--->
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <style>
-  :root {
-    --bg: #f8fafc;
-    --surface: #ffffff;
-    --surface-hover: #f1f5f9;
-    --primary: #2563eb;
-    --primary-light: #dbeafe;
-    --primary-hover: #1d4ed8;
-    --text: #0f172a;
-    --text-secondary: #64748b;
-    --border: #e2e8f0;
-    --shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1);
-    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
-    --radius: 12px;
-    --radius-sm: 8px;
-    --success: #10b981;
-    --danger: #ef4444;
-    --warning: #f59e0b;
-    --info: #3b82f6;
-  }
-  [data-theme="dark"] {
-    --bg: #0f172a;
-    --surface: #1e293b;
-    --surface-hover: #334155;
-    --primary: #3b82f6;
-    --primary-light: #1e3a8a;
-    --primary-hover: #2563eb;
-    --text: #f8fafc;
-    --text-secondary: #94a3b8;
-    --border: #334155;
-    --shadow: 0 1px 3px 0 rgba(0,0,0,0.4);
-    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.4);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  body {
-    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    transition: background 0.3s, color 0.3s;
-    overflow-x: hidden;
-  }
-  .container { max-width: 1200px; margin: 0 auto; padding: 0.75rem; }
+:root {
+  --bg: #f1f5f9;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --text: #0f172a;
+  --text-secondary: #475569;
+  --border: #cbd5e1;
+  --primary: #0ea5e9;
+  --primary-dark: #0284c7;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --item-height: 340px;
+}
 
-  .header {
-    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
-    color: white;
-    padding: 1.25rem 1rem;
-    text-align: center;
-    border-radius: 0 0 var(--radius) var(--radius);
-    box-shadow: var(--shadow-lg);
-    margin-bottom: 1.25rem;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-  .header h1 { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.025em; }
-  .theme-toggle {
-    background: rgba(255,255,255,0.2);
-    border: 1px solid rgba(255,255,255,0.3);
-    color: white;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
-    transition: background 0.2s;
-  }
-  .theme-toggle:hover { background: rgba(255,255,255,0.35); }
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface-2: #334155;
+  --text: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --border: #334155;
+  --primary: #38bdf8;
+  --primary-dark: #0ea5e9;
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+}
 
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 0.75rem;
-    margin-bottom: 1.25rem;
-  }
-  .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1rem 0.75rem;
-    text-align: center;
-    box-shadow: var(--shadow);
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
-  .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
-  .stat-value { font-size: 1.35rem; font-weight: 800; color: var(--primary); line-height: 1; }
-  .stat-label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.4rem; font-weight: 600; }
-  .stat-saldo { color: var(--success); }
-  .stat-danger { color: var(--danger); }
-  .stat-warning { color: var(--warning); }
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-  .upload-zone {
-    border: 2px dashed var(--border);
-    border-radius: var(--radius);
-    padding: 2rem 1rem;
-    text-align: center;
-    background: var(--surface);
-    transition: all 0.3s;
-    cursor: pointer;
-    margin-bottom: 1.25rem;
-    position: relative;
-  }
-  .upload-zone:hover, .upload-zone.dragover {
-    border-color: var(--primary);
-    background: var(--primary-light);
-  }
-  .upload-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
-  .upload-text { color: var(--text-secondary); font-size: 0.875rem; }
-  .upload-text strong { color: var(--primary); }
-  .file-input { display: none; }
-  .progress-container {
-    width: 100%;
-    height: 6px;
-    background: var(--border);
-    border-radius: 3px;
-    overflow: hidden;
-    margin-top: 1rem;
-    display: none;
-  }
-  .progress-container.active { display: block; }
-  .progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, var(--primary), var(--success));
-    width: 0%;
-    transition: width 0.3s ease;
-  }
-  .file-queue {
-    margin-top: 1rem;
-    text-align: left;
-    max-height: 120px;
-    overflow-y: auto;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--bg);
-    padding: 0.5rem;
-  }
-  .file-queue-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-    border-bottom: 1px solid var(--border);
-  }
-  .file-queue-item:last-child { border-bottom: none; }
-  .file-queue-item .status { font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 4px; }
-  .status-done { background: var(--success); color: white; }
-  .status-pending { background: var(--warning); color: white; }
-  .status-error { background: var(--danger); color: white; }
-  .status-processing { background: var(--primary); color: white; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
+}
 
-  .data-persist-info {
-    background: var(--primary-light);
-    border: 1px solid var(--primary);
-    border-radius: var(--radius-sm);
-    padding: 0.75rem 1rem;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-  .data-persist-info span { font-size: 0.85rem; color: var(--primary); font-weight: 600; }
-  .data-persist-info .btn-sm { height: 32px; }
+.app-header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  padding: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
 
-  .controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-    align-items: center;
-  }
-  .control-group {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    flex: 1;
-    min-width: 280px;
-  }
-  input, select, button {
-    font-family: inherit;
-    font-size: 0.875rem;
-    touch-action: manipulation;
-  }
-  input, select {
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--surface);
-    color: var(--text);
-    outline: none;
-    height: 38px;
-  }
-  input:focus, select:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-light);
-  }
-  .btn {
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: var(--radius-sm);
-    background: var(--surface);
-    color: var(--text);
-    border: 1px solid var(--border);
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.2s;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    height: 38px;
-    white-space: nowrap;
-  }
-  .btn:active { transform: scale(0.97); }
-  .btn:hover { background: var(--surface-hover); }
-  .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
-  .btn-primary:hover { background: var(--primary-hover); }
-  .btn-danger { background: var(--danger); color: white; border-color: var(--danger); }
-  .btn-danger:hover { filter: brightness(1.1); }
-  .btn-success { background: var(--success); color: white; border-color: var(--success); }
-  .btn-success:hover { filter: brightness(1.1); }
-  .btn-warning { background: var(--warning); color: white; border-color: var(--warning); }
-  .btn-info { background: var(--info); color: white; border-color: var(--info); }
-  .btn-sm { padding: 0.375rem 0.625rem; font-size: 0.75rem; height: 32px; }
-  .btn-icon { width: 38px; padding: 0; }
+.app-header h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
 
-  .actions-bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-    padding: 0.75rem;
-    background: var(--surface);
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
-    align-items: center;
-  }
-  .actions-bar label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; font-weight: 600; cursor: pointer; }
-  .actions-bar input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); }
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
 
-  .virtual-container {
-    height: 65vh;
-    overflow-y: auto;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--surface);
-    position: relative;
-    -webkit-overflow-scrolling: touch;
-  }
-  .virtual-content { position: relative; }
-  .data-card {
-    border-bottom: 1px solid var(--border);
-    padding: 0.875rem 1rem;
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-    transition: background 0.15s;
-  }
-  .data-card:hover { background: var(--surface-hover); }
-  .data-card:last-child { border-bottom: none; }
-  .card-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 0.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border);
-  }
-  .card-check { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0; }
-  .card-location {
-    font-weight: 800;
-    font-size: 0.8rem;
-    color: var(--primary);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .card-body {
-    flex: 1;
-    font-family: 'SF Mono', 'Courier New', Consolas, monospace;
-    font-size: 0.8rem;
-    line-height: 1.55;
-    white-space: pre-line;
-    color: var(--text);
-    overflow: hidden;
-  }
-  .card-actions {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid var(--border);
-  }
-  .empty-state {
-    padding: 3rem 1rem;
-    text-align: center;
-    color: var(--text-secondary);
-    font-size: 0.95rem;
-  }
+@media (min-width: 640px) {
+  .stats-grid { grid-template-columns: repeat(3, 1fr); }
+}
 
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(4px);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 200;
-    padding: 1rem;
-  }
-  .modal-overlay.active { display: flex; }
-  .modal {
-    background: var(--surface);
-    border-radius: var(--radius);
-    width: 100%;
-    max-width: 520px;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: var(--shadow-lg);
-    padding: 1.5rem;
-    animation: modalIn 0.2s ease;
-  }
-  @keyframes modalIn {
-    from { opacity: 0; transform: translateY(20px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.25rem;
-  }
-  .modal-title { font-size: 1.15rem; font-weight: 800; }
-  .modal-close {
-    background: none; border: none; font-size: 1.5rem; color: var(--text-secondary);
-    cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
-    border-radius: 50%;
-  }
-  .modal-close:hover { background: var(--surface-hover); }
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-  }
-  .form-group { margin-bottom: 0.75rem; }
-  .form-group.full { grid-column: 1 / -1; }
-  .form-label {
-    display: block;
-    font-size: 0.75rem;
-    font-weight: 700;
-    margin-bottom: 0.25rem;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-  }
-  .form-input {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--surface);
-    color: var(--text);
-    font-size: 0.875rem;
-  }
-  .form-input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px var(--primary-light); }
-  .modal-actions {
-    display: flex;
-    gap: 0.75rem;
-    justify-content: flex-end;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border);
-  }
+@media (min-width: 1024px) {
+  .stats-grid { grid-template-columns: repeat(5, 1fr); }
+}
 
-  .loading-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(15,23,42,0.85);
-    backdrop-filter: blur(6px);
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 300;
-    color: white;
-    gap: 1rem;
-  }
-  .loading-overlay.active { display: flex; }
-  .spinner {
-    width: 48px;
-    height: 48px;
-    border: 4px solid rgba(255,255,255,0.25);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { font-size: 0.95rem; font-weight: 500; }
-  .loading-sub { font-size: 0.8rem; opacity: 0.8; }
+.stat-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  text-align: center;
+  transition: transform 0.2s;
+}
 
-  .toast {
-    position: fixed;
-    bottom: 1rem;
-    right: 1rem;
-    background: var(--text);
-    color: white;
-    padding: 0.75rem 1.25rem;
-    border-radius: var(--radius-sm);
-    box-shadow: var(--shadow-lg);
-    transform: translateY(120px);
-    opacity: 0;
-    transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    z-index: 400;
-    font-size: 0.875rem;
-    font-weight: 500;
-    max-width: 90vw;
-  }
-  .toast.show { transform: translateY(0); opacity: 1; }
+.stat-card:hover { transform: translateY(-2px); }
 
-  .scroll-btns {
-    position: fixed;
-    right: 1rem;
-    bottom: 5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    z-index: 50;
-  }
-  .scroll-btns .btn {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    box-shadow: var(--shadow-lg);
-    font-size: 1.1rem;
-  }
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
 
-  @media (max-width: 640px) {
-    .container { padding: 0.5rem; }
-    .header h1 { font-size: 1.1rem; }
-    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
-    .stat-card { padding: 0.75rem 0.5rem; }
-    .stat-value { font-size: 1.1rem; }
-    .stat-label { font-size: 0.65rem; }
-    .controls { flex-direction: column; align-items: stretch; }
-    .control-group { min-width: unset; width: 100%; }
-    .control-group input, .control-group select { flex: 1; min-width: 0; }
-    .virtual-container { height: 55vh; }
-    .form-grid { grid-template-columns: 1fr; }
-    .actions-bar { gap: 0.5rem; }
-    .card-body { font-size: 0.75rem; }
-    .data-persist-info { flex-direction: column; text-align: center; gap: 0.5rem; }
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.upload-section {
+  padding: 0 1rem 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 2rem 1rem;
+  text-align: center;
+  background: var(--surface);
+  transition: all 0.3s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: var(--primary);
+  background: var(--surface-2);
+}
+
+.upload-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+.upload-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.5;
+}
+
+.upload-text {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.upload-subtext {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+.progress-container {
+  margin-top: 1rem;
+  display: none;
+}
+
+.progress-container.active { display: block; }
+
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+  width: 0%;
+  transition: width 0.3s;
+  border-radius: 4px;
+}
+
+.progress-text {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.loading-overlay.active { display: flex; }
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--surface);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.controls-section {
+  padding: 0 1rem 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.controls-grid {
+  display: grid;
+  gap: 0.75rem;
+  background: var(--surface);
+  padding: 1rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+@media (min-width: 768px) {
+  .controls-grid {
+    grid-template-columns: repeat(4, 1fr);
+    align-items: end;
   }
-  @media (max-width: 400px) {
-    .stats-grid { grid-template-columns: 1fr; }
+  .controls-grid .control-group:last-child {
+    grid-column: 1 / -1;
   }
-  @media (min-width: 1024px) {
-    .stats-grid { grid-template-columns: repeat(5, 1fr); }
-  }
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.control-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+
+.control-input, .control-select {
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.control-input:focus, .control-select:focus {
+  border-color: var(--primary);
+}
+
+.search-box { position: relative; }
+.search-box input { width: 100%; padding-left: 2.5rem; }
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.actions-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  align-items: center;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.2s;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-success { background: var(--success); color: white; }
+.btn-warning { background: var(--warning); color: white; }
+.btn-danger { background: var(--danger); color: white; }
+.btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--border); }
+.btn-sm { padding: 0.375rem 0.625rem; font-size: 0.75rem; }
+
+.results-section {
+  padding: 0 1rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.results-title {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.results-count {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.results-container {
+  height: calc(100vh - 420px);
+  min-height: 400px;
+  overflow-y: auto;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  position: relative;
+}
+
+@media (max-width: 640px) {
+  .results-container { height: calc(100vh - 400px); min-height: 300px; }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 2rem;
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  opacity: 0.3;
+  margin-bottom: 1rem;
+}
+
+#virtualWrapper { position: relative; }
+
+.data-card {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0.875rem;
+  position: absolute;
+  left: 0;
+  right: 0;
+  transition: background 0.2s;
+  overflow: hidden;
+}
+
+.data-card:hover { background: var(--surface-2); }
+.data-card.selected {
+  background: rgb(14 165 233 / 0.08);
+  border-left: 3px solid var(--primary);
+  padding-left: calc(0.875rem - 3px);
+}
+
+.card-header {
+  margin-bottom: 0.625rem;
+  padding-bottom: 0.625rem;
+  border-bottom: 2px solid var(--primary);
+}
+
+.card-header h3 {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1.3;
+}
+
+.card-body {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.8125rem;
+}
+
+.card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  min-height: 20px;
+}
+
+.card-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.card-value {
+  font-weight: 600;
+  text-align: right;
+  word-break: break-all;
+}
+
+.card-value.saldo {
+  color: var(--success);
+  font-size: 0.9375rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: fit-content;
+  margin: 0.15rem 0;
+}
+
+.badge-tunggal { background: rgb(16 185 129 / 0.15); color: var(--success); }
+.badge-sensor { background: rgb(245 158 11 / 0.15); color: #d97706; }
+
+.token-line {
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  color: var(--warning);
+  margin: 0.15rem 0;
+  font-size: 0.8125rem;
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.625rem;
+  padding-top: 0.625rem;
+  border-top: 1px solid var(--border);
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.card-actions .btn { padding: 0.25rem 0.5rem; font-size: 0.7rem; }
+
+.card-actions label {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  cursor: pointer;
+  white-space: nowrap;
+  margin-left: auto;
+  color: var(--text-secondary);
+}
+
+.card-actions input[type="checkbox"] {
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+  accent-color: var(--primary);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+}
+
+.modal-overlay.active { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.modal-header {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title { font-weight: 700; }
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  line-height: 1;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+}
+
+.modal-close:hover { background: var(--bg); }
+
+.modal-body {
+  padding: 1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.form-input, .form-select {
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.875rem;
+  outline: none;
+  width: 100%;
+}
+
+.form-input:focus, .form-select:focus { border-color: var(--primary); }
+
+.modal-footer {
+  padding: 1rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.toast-container {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--surface);
+  color: var(--text);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  font-size: 0.875rem;
+  animation: slideIn 0.3s ease;
+  max-width: 320px;
+  pointer-events: auto;
+}
+
+.toast-success { border-left: 4px solid var(--success); }
+.toast-error { border-left: 4px solid var(--danger); }
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.theme-toggle {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 100;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.25rem;
+  transition: all 0.3s;
+  color: var(--text);
+}
+
+.theme-toggle:hover { transform: scale(1.1); }
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+@media (max-width: 640px) {
+  .app-header h1 { font-size: 1rem; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; padding: 0.75rem; }
+  .stat-value { font-size: 1.25rem; }
+  .controls-grid { padding: 0.75rem; }
+  .results-header { flex-direction: column; align-items: flex-start; }
+  .card-row { gap: 0.5rem; }
+  .card-value { text-align: left; }
+}
+
+@media (max-width: 380px) {
+  .card-actions .btn { padding: 0.2rem 0.4rem; font-size: 0.65rem; }
+}
 </style>
 </head>
 <body>
 
-<div class="container">
-  <header class="header">
-    <h1>WEB EKSTRAK DATA XLSX</h1>
-    <button class="theme-toggle" id="theme-toggle" title="Ganti Tema">🌓</button>
-  </header>
+<header class="app-header">
+  <h1>WEB EKSTRAK DATA XLSX</h1>
+</header>
 
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-value" id="stat-total">0</div>
-      <div class="stat-label">Total Data</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value" id="stat-lolos">0</div>
-      <div class="stat-label">Lolos Filter</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value stat-saldo" id="stat-saldo">0</div>
-      <div class="stat-label">Total Saldo</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value stat-warning" id="stat-tunggal">0</div>
-      <div class="stat-label">TUNGGAL</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value stat-danger" id="stat-sensor">0</div>
-      <div class="stat-label">SENSOR</div>
-    </div>
+<section class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-value" id="stat-total">0</div>
+    <div class="stat-label">Total Data</div>
   </div>
+  <div class="stat-card">
+    <div class="stat-value" id="stat-filtered">0</div>
+    <div class="stat-label">Lolos Filter</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" id="stat-tunggal">0</div>
+    <div class="stat-label">Tunggal</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" id="stat-sensor">0</div>
+    <div class="stat-label">Sensor</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" id="stat-saldo">0</div>
+    <div class="stat-label">Total Saldo</div>
+  </div>
+</section>
 
-  <div class="upload-zone" id="upload-zone">
+<section class="upload-section">
+  <div class="upload-zone" id="uploadZone">
+    <input type="file" id="fileInput" accept=".xlsx,.xls" multiple>
     <div class="upload-icon">📁</div>
-    <div class="upload-text">
-      <strong>Drag & Drop</strong> banyak file XLSX di sini<br>
-      atau <strong>klik untuk pilih banyak file</strong> (Ctrl+Click / Cmd+Click)
-    </div>
-    <div class="progress-container" id="progress-wrap">
-      <div class="progress-bar" id="progress-bar"></div>
-    </div>
-    <div class="file-queue" id="file-queue" style="display:none;"></div>
-    <input type="file" class="file-input" id="file-input" multiple accept=".xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+    <div class="upload-text">Drag & Drop file XLSX di sini</div>
+    <div class="upload-subtext">atau klik untuk memilih file (bisa banyak file sekaligus)</div>
   </div>
-
-  <div class="data-persist-info" id="persist-info" style="display:none;">
-    <span>💾 Data tersimpan otomatis. <strong id="persist-count">0</strong> baris data tersedia.</span>
-    <div style="display:flex; gap:0.5rem;">
-      <button class="btn btn-sm btn-primary" id="btn-restore">🔄 Restore Data</button>
-      <button class="btn btn-sm btn-danger" id="btn-clear-persist">🗑 Hapus Data Tersimpan</button>
+  <div class="progress-container" id="progressContainer">
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progressBar"></div>
     </div>
+    <div class="progress-text" id="progressText">Membaca file...</div>
   </div>
+</section>
 
-  <div class="controls">
+<section class="controls-section">
+  <div class="controls-grid">
     <div class="control-group">
-      <input type="text" id="search-input" placeholder="Cari NIK / KPJ / Nama..." style="flex:2; min-width:180px;">
-      <select id="filter-kab"><option value="">Semua Kabupaten</option></select>
-      <select id="filter-kec"><option value="">Semua Kecamatan</option></select>
-      <select id="filter-kel"><option value="">Semua Kelurahan</option></select>
-      <select id="sort-select">
-        <option value="default">Urut: Kab->Kec->Kel->Saldo ↓</option>
+      <label class="control-label">Kabupaten</label>
+      <select class="control-select" id="filterKabupaten"><option value="">Semua Kabupaten</option></select>
+    </div>
+    <div class="control-group">
+      <label class="control-label">Kecamatan</label>
+      <select class="control-select" id="filterKecamatan"><option value="">Semua Kecamatan</option></select>
+    </div>
+    <div class="control-group">
+      <label class="control-label">Kelurahan</label>
+      <select class="control-select" id="filterKelurahan"><option value="">Semua Kelurahan</option></select>
+    </div>
+    <div class="control-group">
+      <label class="control-label">Urutkan</label>
+      <select class="control-select" id="sortSelect">
         <option value="saldo-desc">Saldo Terbesar</option>
         <option value="saldo-asc">Saldo Terkecil</option>
         <option value="nama-asc">Nama A-Z</option>
         <option value="nama-desc">Nama Z-A</option>
       </select>
     </div>
-    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-      <button class="btn btn-sm" id="btn-reset">🔄 Reset Filter</button>
-      <button class="btn btn-sm" id="btn-refresh">🔃 Refresh</button>
+    <div class="control-group">
+      <label class="control-label">Pencarian (NIK / KPJ / Nama)</label>
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="control-input" id="searchInput" placeholder="Ketik untuk mencari...">
+      </div>
     </div>
   </div>
 
   <div class="actions-bar">
-    <label><input type="checkbox" id="select-all"> Pilih Semua</label>
-    <button class="btn btn-danger btn-sm" id="btn-delete-selected">🗑 Hapus Terpilih</button>
-    <button class="btn btn-success btn-sm" id="btn-copy-all">📋 Copy Semua</button>
-    <button class="btn btn-primary btn-sm" id="btn-txt">📄 TXT</button>
-    <button class="btn btn-primary btn-sm" id="btn-csv">📊 CSV</button>
-    <button class="btn btn-primary btn-sm" id="btn-xlsx">📈 XLSX</button>
+    <button class="btn btn-secondary btn-sm" onclick="selectAll()">✓ Pilih Semua</button>
+    <button class="btn btn-danger btn-sm" onclick="deleteSelected()">🗑 Hapus Terpilih</button>
+    <button class="btn btn-secondary btn-sm" onclick="copyAll()">📋 Copy Semua</button>
+    <button class="btn btn-primary btn-sm" onclick="downloadTXT()">📄 TXT</button>
+    <button class="btn btn-primary btn-sm" onclick="downloadCSV()">📊 CSV</button>
+    <button class="btn btn-primary btn-sm" onclick="downloadXLSX()">📈 XLSX</button>
+    <button class="btn btn-danger btn-sm" onclick="clearAllData()">🗑 Hapus Semua Data</button>
+    <span id="selectedCount" style="font-size: 0.875rem; color: var(--text-secondary); margin-left: auto;">0 dipilih</span>
   </div>
+</section>
 
-  <div class="virtual-container" id="virtual-container">
-    <div class="virtual-content" id="virtual-content">
-      <div class="empty-state">Belum ada data. Silakan upload file XLSX atau restore data yang tersimpan.</div>
+<section class="results-section">
+  <div class="results-header">
+    <h2 class="results-title">Hasil Filter</h2>
+    <span class="results-count" id="resultsCount">0 data ditampilkan</span>
+  </div>
+  <div class="results-container" id="resultsContainer">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-state-icon">📂</div>
+      <p>Belum ada data. Upload file XLSX untuk memulai.</p>
     </div>
+    <div id="virtualWrapper"></div>
   </div>
-</div>
+</section>
 
-<div class="scroll-btns">
-  <button class="btn btn-icon" id="scroll-top" title="Ke Atas">⬆️</button>
-  <button class="btn btn-icon" id="scroll-bottom" title="Ke Bawah">⬇️</button>
-</div>
-
-<div class="modal-overlay" id="edit-modal">
+<div class="modal-overlay" id="editModal">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">✏️ Edit Data</div>
-      <button class="modal-close" id="modal-close">&times;</button>
+      <span class="modal-title">Edit Data</span>
+      <button class="modal-close" onclick="closeEdit()">×</button>
     </div>
-    <div class="form-grid">
-      <div class="form-group full">
-        <label class="form-label">NIK</label>
-        <input class="form-input" id="edit-nik">
-      </div>
-      <div class="form-group">
-        <label class="form-label">KPJ</label>
-        <input class="form-input" id="edit-kpj">
-      </div>
-      <div class="form-group">
-        <label class="form-label">NAMA_OSS</label>
-        <input class="form-input" id="edit-nama">
-      </div>
-      <div class="form-group">
-        <label class="form-label">TANGGAL_LAHIR</label>
-        <input class="form-input" id="edit-tgl">
-      </div>
-      <div class="form-group">
-        <label class="form-label">KELAMIN</label>
-        <input class="form-input" id="edit-kelamin">
-      </div>
-      <div class="form-group">
-        <label class="form-label">SALDO</label>
-        <input class="form-input" id="edit-saldo" type="number">
-      </div>
-      <div class="form-group">
-        <label class="form-label">JML_KARTU</label>
-        <input class="form-input" id="edit-kartu" type="number">
-      </div>
-      <div class="form-group">
-        <label class="form-label">KABUPATEN</label>
-        <input class="form-input" id="edit-kab">
-      </div>
-      <div class="form-group">
-        <label class="form-label">KECAMATAN</label>
-        <input class="form-input" id="edit-kec">
-      </div>
-      <div class="form-group">
-        <label class="form-label">KELURAHAN</label>
-        <input class="form-input" id="edit-kel">
-      </div>
-      <div class="form-group">
-        <label class="form-label">STATUS_AKUN</label>
-        <input class="form-input" id="edit-status">
-      </div>
-      <div class="form-group">
-        <label class="form-label">PESAN_PENGKINIAN</label>
-        <input class="form-input" id="edit-pesan">
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn" id="btn-cancel">Batal</button>
-      <button class="btn btn-primary" id="btn-save">💾 Simpan</button>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeEdit()">Batal</button>
+      <button class="btn btn-primary" onclick="saveEdit()">Simpan</button>
     </div>
   </div>
 </div>
 
-<div class="loading-overlay" id="loading">
+<div class="loading-overlay" id="loadingOverlay">
   <div class="spinner"></div>
-  <div class="loading-text">Membaca file...</div>
-  <div class="loading-sub" id="loading-sub">Mohon tunggu</div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast-container" id="toastContainer"></div>
+
+<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙</button>
 
 <script>
-(function() {
-  'use strict';
+// ==================== STATE ====================
+const state = {
+  items: [],
+  filtered: [],
+  selected: new Set(),
+  filters: {
+    kabupaten: '',
+    kecamatan: '',
+    kelurahan: '',
+    search: '',
+    sort: 'saldo-desc'
+  },
+  editingId: null,
+  darkMode: false
+};
 
-  const STORAGE_KEY_DATA = 'ekstrak_data_v2';
-  const STORAGE_KEY_STATE = 'ekstrak_state_v2';
-  const STORAGE_KEY_META = 'ekstrak_meta_v2';
-  const CHUNK_SIZE = 1000; // rows per chunk for localStorage
+const ITEM_HEIGHT = 340;
+const BUFFER = 4;
 
-  const App = {
-    rawData: [],
-    hardFiltered: [],
-    filteredData: [],
-    displayData: [],
-    selected: new Set(),
-    filters: { search: '', kab: '', kec: '', kel: '' },
-    sort: 'default',
-    isDark: false,
-    ITEM_HEIGHT: 260,
-    BUFFER: 4,
-    editingId: null,
-    fileQueue: [],
-    isProcessing: false,
-    dataLoaded: false
-  };
+// ==================== DB (IndexedDB) ====================
+const DB_NAME = 'XlsxExtractDB';
+const STORE = 'items';
+let db = null;
 
-  const $ = id => document.getElementById(id);
-  const els = {
-    uploadZone: $('upload-zone'),
-    fileInput: $('file-input'),
-    progressWrap: $('progress-wrap'),
-    progressBar: $('progress-bar'),
-    loading: $('loading'),
-    loadingSub: $('loading-sub'),
-    virtualContainer: $('virtual-container'),
-    virtualContent: $('virtual-content'),
-    search: $('search-input'),
-    kab: $('filter-kab'),
-    kec: $('filter-kec'),
-    kel: $('filter-kel'),
-    sort: $('sort-select'),
-    selectAll: $('select-all'),
-    toast: $('toast'),
-    editModal: $('edit-modal'),
-    themeToggle: $('theme-toggle'),
-    fileQueue: $('file-queue'),
-    persistInfo: $('persist-info'),
-    persistCount: $('persist-count')
-  };
-
-  // ===== INIT =====
-  loadState();
-  applyTheme();
-  checkPersistedData();
-  bindEvents();
-
-  function checkPersistedData() {
-    try {
-      const meta = JSON.parse(localStorage.getItem(STORAGE_KEY_META) || '{}');
-      if (meta && meta.count && meta.count > 0) {
-        els.persistInfo.style.display = 'flex';
-        els.persistCount.textContent = meta.count.toLocaleString('id-ID');
-        els.virtualContent.innerHTML = '<div class="empty-state">💾 Data tersedia di penyimpanan lokal. Klik "Restore Data" untuk memuat kembali.</div>';
+function initDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = (e) => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains(STORE)) {
+        d.createObjectStore(STORE, { keyPath: 'id' });
       }
-    } catch(e) {}
-  }
-
-  function bindEvents() {
-    els.uploadZone.addEventListener('click', () => els.fileInput.click());
-    els.uploadZone.addEventListener('dragover', e => { e.preventDefault(); els.uploadZone.classList.add('dragover'); });
-    els.uploadZone.addEventListener('dragleave', () => els.uploadZone.classList.remove('dragover'));
-    els.uploadZone.addEventListener('drop', e => {
-      e.preventDefault();
-      els.uploadZone.classList.remove('dragover');
-      const files = Array.from(e.dataTransfer.files).filter(f => f.name.match(/\.xlsx?$/i));
-      if (files.length) addFilesToQueue(files);
-    });
-    els.fileInput.addEventListener('change', e => {
-      if (e.target.files.length) addFilesToQueue(Array.from(e.target.files));
-    });
-
-    els.search.addEventListener('input', debounce(() => { App.filters.search = els.search.value; applyPipeline(); saveState(); }, 300));
-    els.kab.addEventListener('change', () => { App.filters.kab = els.kab.value; applyPipeline(); saveState(); });
-    els.kec.addEventListener('change', () => { App.filters.kec = els.kec.value; applyPipeline(); saveState(); });
-    els.kel.addEventListener('change', () => { App.filters.kel = els.kel.value; applyPipeline(); saveState(); });
-    els.sort.addEventListener('change', () => { App.sort = els.sort.value; applyPipeline(); saveState(); });
-
-    $('btn-reset').addEventListener('click', resetFilters);
-    $('btn-refresh').addEventListener('click', applyPipeline);
-    $('select-all').addEventListener('change', e => selectAll(e.target.checked));
-    $('btn-delete-selected').addEventListener('click', deleteSelected);
-    $('btn-copy-all').addEventListener('click', copyAll);
-    $('btn-txt').addEventListener('click', downloadTXT);
-    $('btn-csv').addEventListener('click', downloadCSV);
-    $('btn-xlsx').addEventListener('click', downloadXLSX);
-    $('scroll-top').addEventListener('click', () => els.virtualContainer.scrollTo({top:0, behavior:'smooth'}));
-    $('scroll-bottom').addEventListener('click', () => els.virtualContainer.scrollTo({top: els.virtualContainer.scrollHeight, behavior:'smooth'}));
-    els.themeToggle.addEventListener('click', toggleTheme);
-
-    $('btn-restore').addEventListener('click', restoreData);
-    $('btn-clear-persist').addEventListener('click', clearPersistedData);
-
-    els.virtualContainer.addEventListener('scroll', debounce(renderVirtual, 50));
-    window.addEventListener('resize', debounce(renderVirtual, 100));
-
-    $('modal-close').addEventListener('click', closeModal);
-    $('btn-cancel').addEventListener('click', closeModal);
-    $('btn-save').addEventListener('click', saveEdit);
-    els.editModal.addEventListener('click', e => { if (e.target === els.editModal) closeModal(); });
-  }
-
-  // ===== PERSIST DATA =====
-  function persistData() {
-    try {
-      // Store in chunks to avoid localStorage limit
-      const data = App.rawData;
-      const totalChunks = Math.ceil(data.length / CHUNK_SIZE);
-
-      // Clear old chunks first
-      for (let i = 0; i < 1000; i++) {
-        const key = STORAGE_KEY_DATA + '_chunk_' + i;
-        if (localStorage.getItem(key) === null) break;
-        localStorage.removeItem(key);
-      }
-
-      // Store new chunks
-      for (let i = 0; i < totalChunks; i++) {
-        const chunk = data.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-        localStorage.setItem(STORAGE_KEY_DATA + '_chunk_' + i, JSON.stringify(chunk));
-      }
-
-      // Store metadata
-      localStorage.setItem(STORAGE_KEY_META, JSON.stringify({
-        count: data.length,
-        chunks: totalChunks,
-        timestamp: Date.now(),
-        date: new Date().toLocaleString('id-ID')
-      }));
-
-      els.persistInfo.style.display = 'flex';
-      els.persistCount.textContent = data.length.toLocaleString('id-ID');
-    } catch(e) {
-      console.warn('Failed to persist data:', e);
-      showToast('⚠️ Data terlalu besar untuk disimpan otomatis. Gunakan export untuk backup.');
-    }
-  }
-
-  function restoreData() {
-    try {
-      showLoading(true, 'Memuat data dari penyimpanan lokal...');
-
-      const meta = JSON.parse(localStorage.getItem(STORAGE_KEY_META) || '{}');
-      if (!meta || !meta.count) {
-        showLoading(false);
-        showToast('Tidak ada data tersimpan');
-        return;
-      }
-
-      const chunks = meta.chunks || 0;
-      let restoredData = [];
-
-      for (let i = 0; i < chunks; i++) {
-        const chunkStr = localStorage.getItem(STORAGE_KEY_DATA + '_chunk_' + i);
-        if (chunkStr) {
-          const chunk = JSON.parse(chunkStr);
-          restoredData = restoredData.concat(chunk);
-        }
-        updateProgress(Math.floor((i / chunks) * 100));
-      }
-
-      App.rawData = restoredData;
-      App.selected.clear();
-      App.dataLoaded = true;
-
-      applyPipeline();
-      showLoading(false);
-      showToast('✅ ' + restoredData.length.toLocaleString('id-ID') + ' baris data berhasil dipulihkan');
-    } catch(e) {
-      console.error(e);
-      showLoading(false);
-      showToast('Gagal memulihkan data: ' + e.message);
-    }
-  }
-
-  function clearPersistedData() {
-    if (!confirm('Yakin hapus semua data tersimpan? Data tidak bisa dikembalikan.')) return;
-
-    try {
-      // Remove all chunks
-      for (let i = 0; i < 1000; i++) {
-        const key = STORAGE_KEY_DATA + '_chunk_' + i;
-        if (localStorage.getItem(key) === null) break;
-        localStorage.removeItem(key);
-      }
-      localStorage.removeItem(STORAGE_KEY_META);
-
-      els.persistInfo.style.display = 'none';
-      App.rawData = [];
-      App.selected.clear();
-      applyPipeline();
-      showToast('Data tersimpan dihapus');
-    } catch(e) {
-      showToast('Gagal menghapus data');
-    }
-  }
-
-  // ===== FILE QUEUE SYSTEM =====
-  function addFilesToQueue(files) {
-    const validFiles = files.filter(f => f.name.match(/\.xlsx?$/i));
-    if (!validFiles.length) {
-      showToast('Tidak ada file XLSX yang valid');
-      return;
-    }
-
-    validFiles.forEach(file => {
-      App.fileQueue.push({
-        file: file,
-        name: file.name,
-        size: file.size,
-        status: 'pending',
-        rows: 0
-      });
-    });
-
-    renderQueue();
-    if (!App.isProcessing) processQueue();
-  }
-
-  function renderQueue() {
-    if (!App.fileQueue.length) {
-      els.fileQueue.style.display = 'none';
-      return;
-    }
-    els.fileQueue.style.display = 'block';
-    const html = App.fileQueue.map(item => {
-      const statusClass = 'status-' + item.status;
-      const statusText = item.status === 'pending' ? 'MENUNGGU' : 
-                         item.status === 'processing' ? 'MEMBACA...' :
-                         item.status === 'done' ? 'SELESAI (' + item.rows + ' baris)' :
-                         item.status === 'error' ? 'ERROR' : item.status;
-      return '<div class="file-queue-item">' +
-        '<span>' + escapeHtml(item.name) + ' (' + formatBytes(item.size) + ')</span>' +
-        '<span class="status ' + statusClass + '">' + statusText + '</span>' +
-      '</div>';
-    }).join('');
-    els.fileQueue.innerHTML = html;
-    els.fileQueue.scrollTop = els.fileQueue.scrollHeight;
-  }
-
-  function formatBytes(bytes) {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-  }
-
-  async function processQueue() {
-    if (!window.XLSX) {
-      showToast('SheetJS belum dimuat. Periksa koneksi internet atau gunakan versi offline.');
-      App.fileQueue = [];
-      renderQueue();
-      return;
-    }
-
-    App.isProcessing = true;
-    showLoading(true, 'Membaca ' + App.fileQueue.length + ' file...');
-
-    let totalRows = 0;
-    let processedCount = 0;
-    const totalFiles = App.fileQueue.length;
-
-    for (let i = 0; i < App.fileQueue.length; i++) {
-      const item = App.fileQueue[i];
-      if (item.status !== 'pending') continue;
-
-      item.status = 'processing';
-      renderQueue();
-      updateLoadingText('Membaca file ' + (i + 1) + ' dari ' + totalFiles + ': ' + item.name);
-      updateProgress(Math.floor((processedCount / totalFiles) * 100));
-
-      try {
-        const rows = await readFileAsync(item.file);
-        totalRows += rows;
-        item.rows = rows;
-        item.status = 'done';
-        processedCount++;
-      } catch (err) {
-        console.error(err);
-        item.status = 'error';
-        processedCount++;
-      }
-      renderQueue();
-      updateProgress(Math.floor((processedCount / totalFiles) * 100));
-
-      await new Promise(r => requestAnimationFrame(r));
-      await new Promise(r => setTimeout(r, 50));
-    }
-
-    setTimeout(() => {
-      App.fileQueue = App.fileQueue.filter(item => item.status === 'error');
-      renderQueue();
-    }, 3000);
-
-    App.isProcessing = false;
-    App.dataLoaded = true;
-    showLoading(false);
-
-    // Persist data after successful load
-    persistData();
-
-    App.selected.clear();
-    applyPipeline();
-    showToast('Berhasil memuat ' + totalRows.toLocaleString('id-ID') + ' baris dari ' + processedCount + ' file');
-  }
-
-  function readFileAsync(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = e => {
-        try {
-          const count = processBuffer(e.target.result);
-          resolve(count);
-        } catch (err) {
-          reject(err);
-        }
-      };
-      reader.onerror = () => reject(new Error('Gagal membaca file'));
-      reader.readAsArrayBuffer(file);
-    });
-  }
-
-  function processBuffer(buffer) {
-    const data = new Uint8Array(buffer);
-    const workbook = XLSX.read(data, { type: 'array', cellDates: false });
-    let allRows = 0;
-
-    workbook.SheetNames.forEach(name => {
-      const sheet = workbook.Sheets[name];
-      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-      if (rows.length < 2) return;
-
-      const headers = rows[0].map(h => String(h).trim().toUpperCase().replace(/[_\s]/g, ''));
-      const idx = {};
-      headers.forEach((h, i) => {
-        if (h === 'NIK') idx.nik = i;
-        if (h === 'KPJ') idx.kpj = i;
-        if (h === 'NAMAOSS' || h === 'NAMA_OSS') idx.namaOss = i;
-        if (h === 'TANGGALLAHIR' || h === 'TANGGAL_LAHIR') idx.tgl = i;
-        if (h === 'KELAMIN') idx.kelamin = i;
-        if (h === 'NOTIF') idx.notif = i;
-        if (h === 'PESANPENGKINIAN' || h === 'PESAN_PENGKINIAN') idx.pesan = i;
-        if (h === 'SALDO') idx.saldo = i;
-        if (h === 'JMLKARTU' || h === 'JML_KARTU') idx.kartu = i;
-        if (h === 'KABUPATEN') idx.kab = i;
-        if (h === 'KECAMATAN') idx.kec = i;
-        if (h === 'KELURAHAN') idx.kel = i;
-        if (h === 'STATUSAKUN' || h === 'STATUS_AKUN') idx.status = i;
-      });
-
-      const dataRows = rows.slice(1);
-      for (let i = 0; i < dataRows.length; i++) {
-        const row = dataRows[i];
-        const get = k => row[idx[k]] !== undefined ? row[idx[k]] : '';
-        const obj = {
-          NIK: String(get('nik')).trim(),
-          KPJ: String(get('kpj')).trim(),
-          NAMA_OSS: String(get('namaOss')).trim(),
-          TANGGAL_LAHIR: String(get('tgl')).trim(),
-          KELAMIN: String(get('kelamin')).trim(),
-          NOTIF: String(get('notif')).trim(),
-          PESAN_PENGKINIAN: String(get('pesan')).trim(),
-          SALDO: parseFloat(get('saldo')) || 0,
-          JML_KARTU: parseInt(get('kartu')) || 0,
-          KABUPATEN: String(get('kab')).trim(),
-          KECAMATAN: String(get('kec')).trim(),
-          KELURAHAN: String(get('kel')).trim(),
-          STATUS_AKUN: String(get('status')).trim(),
-          _id: 'id_' + Math.random().toString(36).slice(2) + '_' + Date.now() + '_' + i
-        };
-        if (obj.NIK || obj.KPJ || obj.NAMA_OSS) {
-          App.rawData.push(obj);
-          allRows++;
-        }
-      }
-    });
-
-    return allRows;
-  }
-
-  function updateLoadingText(text) {
-    els.loadingSub.textContent = text;
-  }
-
-  // ===== PIPELINE =====
-  function applyPipeline() {
-    if (App.rawData.length > 50000) {
-      showLoading(true, 'Memproses ' + App.rawData.length.toLocaleString('id-ID') + ' baris...');
-      setTimeout(() => {
-        doApplyPipeline();
-        showLoading(false);
-      }, 50);
-    } else {
-      doApplyPipeline();
-    }
-  }
-
-  function doApplyPipeline() {
-    App.hardFiltered = App.rawData.filter(row => {
-      const status = row.STATUS_AKUN.toUpperCase().replace(/[\s_]/g, '');
-      const pesan = row.PESAN_PENGKINIAN.toUpperCase().trim();
-      return status === 'BELUMTERDAFTAR' && pesan === 'LAYAK' && row.SALDO >= 1000000;
-    });
-
-    populateDropdowns();
-
-    const s = App.filters.search.toLowerCase();
-    App.filteredData = App.hardFiltered.filter(row => {
-      if (App.filters.kab && row.KABUPATEN !== App.filters.kab) return false;
-      if (App.filters.kec && row.KECAMATAN !== App.filters.kec) return false;
-      if (App.filters.kel && row.KELURAHAN !== App.filters.kel) return false;
-      if (s) {
-        const hay = (row.NIK + ' ' + row.KPJ + ' ' + row.NAMA_OSS).toLowerCase();
-        if (!hay.includes(s)) return false;
-      }
-      return true;
-    });
-
-    App.displayData = sortData(App.filteredData);
-    updateStats();
-    renderVirtual();
-    updateSelectAllState();
-  }
-
-  function populateDropdowns() {
-    const kabSet = new Set(App.hardFiltered.map(r => r.KABUPATEN).filter(Boolean));
-    const kecSet = new Set(App.hardFiltered.map(r => r.KECAMATAN).filter(Boolean));
-    const kelSet = new Set(App.hardFiltered.map(r => r.KELURAHAN).filter(Boolean));
-
-    const fill = (el, values, current) => {
-      const opts = Array.from(values).sort((a,b) => a.localeCompare(b));
-      let html = '<option value="">Semua ' + el.dataset.label + '</option>';
-      opts.forEach(v => {
-        html += '<option value="' + escapeHtml(v) + '"' + (v === current ? ' selected' : '') + '>' + escapeHtml(v) + '</option>';
-      });
-      el.innerHTML = html;
     };
+    req.onsuccess = (e) => { db = e.target.result; resolve(); };
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
 
-    els.kab.dataset.label = 'Kabupaten';
-    els.kec.dataset.label = 'Kecamatan';
-    els.kel.dataset.label = 'Kelurahan';
+function saveToDB() {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    const store = tx.objectStore(STORE);
+    store.clear();
+    for (const item of state.items) store.put(item);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
 
-    const currKab = App.filters.kab;
-    const currKec = App.filters.kec;
-    const currKel = App.filters.kel;
+function loadFromDB() {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const store = tx.objectStore(STORE);
+    const req = store.getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
 
-    fill(els.kab, kabSet, currKab);
-    fill(els.kec, kecSet, currKec);
-    fill(els.kel, kelSet, currKel);
+// ==================== UTILS ====================
+function showToast(msg, type = 'success') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
 
-    if (currKab && kabSet.has(currKab)) els.kab.value = currKab;
-    if (currKec && kecSet.has(currKec)) els.kec.value = currKec;
-    if (currKel && kelSet.has(currKel)) els.kel.value = currKel;
+function setLoading(show) {
+  document.getElementById('loadingOverlay').classList.toggle('active', show);
+}
+
+function setProgress(percent, text) {
+  const container = document.getElementById('progressContainer');
+  const bar = document.getElementById('progressBar');
+  const txt = document.getElementById('progressText');
+  const active = percent > 0 && percent < 100;
+  container.classList.toggle('active', active);
+  bar.style.width = percent + '%';
+  if (text) txt.textContent = text;
+}
+
+function formatSaldo(n) {
+  return n.toLocaleString('id-ID');
+}
+
+function parseSaldo(val) {
+  if (typeof val === 'number') return val;
+  if (!val) return 0;
+  const s = String(val).trim();
+  if (s.includes(',') && !s.includes('.')) {
+    return parseFloat(s.replace(',', '.')) || 0;
   }
+  return parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0;
+}
 
-  function sortData(data) {
-    const arr = [...data];
-    switch (App.sort) {
-      case 'saldo-desc':
-        arr.sort((a,b) => b.SALDO - a.SALDO);
-        break;
-      case 'saldo-asc':
-        arr.sort((a,b) => a.SALDO - b.SALDO);
-        break;
-      case 'nama-asc':
-        arr.sort((a,b) => (a.NAMA_OSS || '').localeCompare(b.NAMA_OSS || ''));
-        break;
-      case 'nama-desc':
-        arr.sort((a,b) => (b.NAMA_OSS || '').localeCompare(a.NAMA_OSS || ''));
-        break;
-      default:
-        arr.sort((a,b) => {
-          const kab = (a.KABUPATEN || '').localeCompare(b.KABUPATEN || '');
-          if (kab) return kab;
-          const kec = (a.KECAMATAN || '').localeCompare(b.KECAMATAN || '');
-          if (kec) return kec;
-          const kel = (a.KELURAHAN || '').localeCompare(b.KELURAHAN || '');
-          if (kel) return kel;
-          return b.SALDO - a.SALDO;
-        });
-    }
-    return arr;
-  }
+function parseJmlKartu(val) {
+  if (typeof val === 'number') return val;
+  if (!val) return 0;
+  return parseInt(String(val).replace(/\D/g, '')) || 0;
+}
 
-  function updateStats() {
-    const fmt = n => new Intl.NumberFormat('id-ID').format(n);
-    const total = App.rawData.length;
-    const lolos = App.filteredData.length;
-    const totalSaldo = App.filteredData.reduce((s, r) => s + r.SALDO, 0);
-    const tunggal = App.filteredData.filter(r => r.JML_KARTU <= 1).length;
-    const sensor = App.filteredData.filter(r => r.JML_KARTU > 1).length;
-
-    $('stat-total').textContent = fmt(total);
-    $('stat-lolos').textContent = fmt(lolos);
-    $('stat-saldo').textContent = fmt(totalSaldo);
-    $('stat-tunggal').textContent = fmt(tunggal);
-    $('stat-sensor').textContent = fmt(sensor);
-  }
-
-  function renderVirtual() {
-    const data = App.displayData;
-    const content = els.virtualContent;
-
-    if (!data.length) {
-      content.style.paddingTop = '0';
-      content.style.paddingBottom = '0';
-      if (App.dataLoaded || App.rawData.length > 0) {
-        content.innerHTML = '<div class="empty-state">Tidak ada data yang memenuhi filter.</div>';
-      } else {
-        content.innerHTML = '<div class="empty-state">Belum ada data. Silakan upload file XLSX atau restore data yang tersimpan.</div>';
+function normalizeItem(raw) {
+  const get = (keys) => {
+    for (const k of keys) {
+      if (raw[k] !== undefined && raw[k] !== null && raw[k] !== '') {
+        return raw[k];
       }
-      return;
     }
+    return '';
+  };
 
-    const cHeight = els.virtualContainer.clientHeight;
-    const sTop = els.virtualContainer.scrollTop;
-    const start = Math.max(0, Math.floor(sTop / App.ITEM_HEIGHT) - App.BUFFER);
-    const end = Math.min(data.length, Math.ceil((sTop + cHeight) / App.ITEM_HEIGHT) + App.BUFFER);
+  const item = {
+    id: get(['id']) || Math.random().toString(36).slice(2) + Date.now(),
+    NIK: String(get(['NIK', 'nik']) || '').trim(),
+    KPJ: String(get(['KPJ', 'kpj']) || '').trim(),
+    NAMA_OSS: String(get(['NAMA_OSS', 'nama_oss', 'NAMA OSS', 'nama oss']) || '').trim(),
+    TANGGAL_LAHIR: String(get(['TANGGAL_LAHIR', 'tanggal_lahir', 'TGL LAHIR', 'TANGGAL LAHIR']) || '').trim(),
+    KELAMIN: String(get(['KELAMIN', 'kelamin', 'JENIS KELAMIN']) || '').trim(),
+    NOTIF: String(get(['NOTIF', 'notif']) || '').trim(),
+    PESAN_PENGKINIAN: String(get(['PESAN_PENGKINIAN', 'pesan_pengkinian', 'PESAN', 'PESAN PENGKINIAN']) || '').trim(),
+    SALDO: parseSaldo(get(['SALDO', 'saldo'])),
+    JML_KARTU: parseJmlKartu(get(['JML_KARTU', 'jml_kartu', 'JUMLAH KARTU', 'JML KARTU'])),
+    KABUPATEN: String(get(['KABUPATEN', 'kabupaten', 'KAB']) || '').trim().toUpperCase(),
+    KECAMATAN: String(get(['KECAMATAN', 'kecamatan', 'KEC']) || '').trim().toUpperCase(),
+    KELURAHAN: String(get(['KELURAHAN', 'kelurahan', 'KEL']) || '').trim().toUpperCase(),
+    STATUS_AKUN: String(get(['STATUS_AKUN', 'status_akun', 'STATUS', 'STATUS AKUN']) || '').trim(),
+  };
 
-    content.style.paddingTop = (start * App.ITEM_HEIGHT) + 'px';
-    content.style.paddingBottom = ((data.length - end) * App.ITEM_HEIGHT) + 'px';
+  const k = item.KELAMIN.toUpperCase();
+  if (k === 'L' || k.includes('LAKI')) item.KELAMIN_DISPLAY = 'PRIA';
+  else if (k === 'P' || k.includes('PEREMPUAN')) item.KELAMIN_DISPLAY = 'WANITA';
+  else item.KELAMIN_DISPLAY = item.KELAMIN || '-';
 
-    content.innerHTML = '';
-    const frag = document.createDocumentFragment();
-    for (let i = start; i < end; i++) {
-      frag.appendChild(createCard(data[i], i));
+  item._statusNorm = item.STATUS_AKUN.toUpperCase().replace(/[_\s]/g, '');
+  item.KARTU_TYPE = item.JML_KARTU <= 1 ? 'TUNGGAL' : 'SENSOR';
+  item.SALDO_FORMAT = formatSaldo(item.SALDO);
+
+  return item;
+}
+
+function passesFilter(item) {
+  const statusOk = item._statusNorm === 'BELUMTERDAFTAR';
+  const pesanOk = item.PESAN_PENGKINIAN.toUpperCase() === 'LAYAK';
+  const saldoOk = item.SALDO >= 1000000;
+  return statusOk && pesanOk && saldoOk;
+}
+
+function formatItemText(item) {
+  return `${item.KABUPATEN}, ${item.KECAMATAN}, ${item.KELURAHAN}
+
+${item.NIK}
+${item.KELAMIN_DISPLAY}
+${item.TANGGAL_LAHIR}
+
+${item.KARTU_TYPE}
+${item.SALDO_FORMAT}
+PERUSAHAAN
+N/A 01-
+
+Qwer123@
+${item.KPJ}
+${item.NAMA_OSS}`;
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard) {
+    return navigator.clipboard.writeText(text);
+  }
+  return new Promise((resolve) => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    resolve();
+  });
+}
+
+// ==================== FILE PROCESSING ====================
+function readFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function findHeaderRow(worksheet) {
+  const range = XLSX.utils.decode_range(worksheet['!ref']);
+  for (let R = range.s.r; R <= Math.min(range.e.r, range.s.r + 20); R++) {
+    let hasNIK = false;
+    const headers = [];
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const cell = worksheet[XLSX.utils.encode_cell({ r: R, c: C })];
+      const val = cell ? String(cell.v).toUpperCase().trim() : '';
+      headers.push(val);
+      if (val === 'NIK') hasNIK = true;
     }
-    content.appendChild(frag);
+    if (hasNIK) return { row: R, headers };
+  }
+  return null;
+}
+
+function extractSheet(worksheet, headerInfo) {
+  const range = XLSX.utils.decode_range(worksheet['!ref']);
+  const rows = [];
+  for (let R = headerInfo.row + 1; R <= range.e.r; R++) {
+    const obj = {};
+    let hasData = false;
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const header = headerInfo.headers[C - range.s.c] || `COL${C}`;
+      const cell = worksheet[XLSX.utils.encode_cell({ r: R, c: C })];
+      const val = cell ? cell.v : '';
+      obj[header] = val;
+      if (val !== '' && val !== null && val !== undefined) hasData = true;
+    }
+    if (hasData) rows.push(obj);
+  }
+  return rows;
+}
+
+async function processFiles(files) {
+  if (!files.length) return;
+  if (typeof XLSX === 'undefined') {
+    return showToast('SheetJS belum dimuat. Tidak bisa membaca file.', 'error');
   }
 
-  function createCard(row, index) {
+  setLoading(true);
+  setProgress(0, 'Membaca file...');
+
+  let newItems = [];
+  const total = files.length;
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    try {
+      const data = await readFile(file);
+      const workbook = XLSX.read(new Uint8Array(data), { type: 'array', cellDates: false });
+
+      for (const sheetName of workbook.SheetNames) {
+        const ws = workbook.Sheets[sheetName];
+        const headerInfo = findHeaderRow(ws);
+        if (!headerInfo) continue;
+
+        const rows = extractSheet(ws, headerInfo);
+        for (const row of rows) {
+          const item = normalizeItem(row);
+          if (passesFilter(item)) {
+            newItems.push(item);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error reading file:', err);
+      showToast(`Gagal membaca ${file.name}`, 'error');
+    }
+    setProgress(((i + 1) / total) * 100, `Membaca ${file.name}...`);
+  }
+
+  // Merge dengan existing, hindari duplikat berdasarkan NIK+KPJ
+  const existingKeys = new Set(state.items.map(i => i.NIK + '|' + i.KPJ));
+  let added = 0;
+  for (const item of newItems) {
+    const key = item.NIK + '|' + item.KPJ;
+    if (!existingKeys.has(key)) {
+      state.items.push(item);
+      existingKeys.add(key);
+      added++;
+    }
+  }
+
+  await saveToDB();
+  setProgress(0);
+  setLoading(false);
+
+  showToast(`${added} data baru berhasil ditambahkan (${state.items.length} total)`);
+  applyFilters();
+}
+
+// ==================== FILTER & SORT ====================
+function applyFilters() {
+  let data = [...state.items];
+
+  if (state.filters.kabupaten) {
+    data = data.filter(i => i.KABUPATEN === state.filters.kabupaten);
+  }
+  if (state.filters.kecamatan) {
+    data = data.filter(i => i.KECAMATAN === state.filters.kecamatan);
+  }
+  if (state.filters.kelurahan) {
+    data = data.filter(i => i.KELURAHAN === state.filters.kelurahan);
+  }
+  if (state.filters.search) {
+    const q = state.filters.search.toLowerCase();
+    data = data.filter(i =>
+      i.NIK.toLowerCase().includes(q) ||
+      i.KPJ.toLowerCase().includes(q) ||
+      i.NAMA_OSS.toLowerCase().includes(q)
+    );
+  }
+
+  data.sort((a, b) => {
+    const kab = a.KABUPATEN.localeCompare(b.KABUPATEN);
+    if (kab !== 0) return kab;
+    const kec = a.KECAMATAN.localeCompare(b.KECAMATAN);
+    if (kec !== 0) return kec;
+    const kel = a.KELURAHAN.localeCompare(b.KELURAHAN);
+    if (kel !== 0) return kel;
+
+    switch (state.filters.sort) {
+      case 'saldo-asc': return a.SALDO - b.SALDO;
+      case 'nama-asc': return a.NAMA_OSS.localeCompare(b.NAMA_OSS);
+      case 'nama-desc': return b.NAMA_OSS.localeCompare(a.NAMA_OSS);
+      default: return b.SALDO - a.SALDO;
+    }
+  });
+
+  state.filtered = data;
+  updateDropdowns();
+  updateStats();
+  lastStart = -1; lastEnd = -1;
+  renderVirtual();
+  saveFilters();
+}
+
+function updateDropdowns() {
+  const base = state.items;
+  const kabs = [...new Set(base.map(i => i.KABUPATEN))].filter(Boolean).sort();
+  const kecs = [...new Set(base
+    .filter(i => !state.filters.kabupaten || i.KABUPATEN === state.filters.kabupaten)
+    .map(i => i.KECAMATAN))].filter(Boolean).sort();
+  const kels = [...new Set(base
+    .filter(i =>
+      (!state.filters.kabupaten || i.KABUPATEN === state.filters.kabupaten) &&
+      (!state.filters.kecamatan || i.KECAMATAN === state.filters.kecamatan)
+    )
+    .map(i => i.KELURAHAN))].filter(Boolean).sort();
+
+  populateSelect('filterKabupaten', kabs, state.filters.kabupaten, 'Semua Kabupaten');
+  populateSelect('filterKecamatan', kecs, state.filters.kecamatan, 'Semua Kecamatan');
+  populateSelect('filterKelurahan', kels, state.filters.kelurahan, 'Semua Kelurahan');
+}
+
+function populateSelect(id, options, selected, placeholder) {
+  const sel = document.getElementById(id);
+  sel.innerHTML = `<option value="">${placeholder}</option>`;
+  for (const opt of options) {
+    const option = document.createElement('option');
+    option.value = opt;
+    option.textContent = opt;
+    if (opt === selected) option.selected = true;
+    sel.appendChild(option);
+  }
+  if (selected && !options.includes(selected)) {
+    sel.value = '';
+  }
+}
+
+function updateStats() {
+  const total = state.items.length;
+  const filtered = state.filtered.length;
+  const tunggal = state.filtered.filter(i => i.KARTU_TYPE === 'TUNGGAL').length;
+  const sensor = state.filtered.filter(i => i.KARTU_TYPE === 'SENSOR').length;
+  const saldo = state.filtered.reduce((sum, i) => sum + i.SALDO, 0);
+
+  document.getElementById('stat-total').textContent = total.toLocaleString('id-ID');
+  document.getElementById('stat-filtered').textContent = filtered.toLocaleString('id-ID');
+  document.getElementById('stat-tunggal').textContent = tunggal.toLocaleString('id-ID');
+  document.getElementById('stat-sensor').textContent = sensor.toLocaleString('id-ID');
+  document.getElementById('stat-saldo').textContent = formatSaldo(saldo);
+  document.getElementById('resultsCount').textContent = `${filtered} data ditampilkan`;
+  document.getElementById('selectedCount').textContent = `${state.selected.size} dipilih`;
+}
+
+// ==================== VIRTUAL RENDER ====================
+let lastStart = -1, lastEnd = -1;
+
+function renderVirtual() {
+  const container = document.getElementById('resultsContainer');
+  const wrapper = document.getElementById('virtualWrapper');
+  const empty = document.getElementById('emptyState');
+
+  if (!state.filtered.length) {
+    wrapper.style.display = 'none';
+    empty.style.display = 'flex';
+    container.style.overflowY = 'hidden';
+    return;
+  }
+
+  wrapper.style.display = 'block';
+  empty.style.display = 'none';
+  container.style.overflowY = 'auto';
+
+  const scrollTop = container.scrollTop;
+  const viewHeight = container.clientHeight;
+
+  const start = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - BUFFER);
+  const end = Math.min(state.filtered.length, Math.ceil((scrollTop + viewHeight) / ITEM_HEIGHT) + BUFFER);
+
+  if (start === lastStart && end === lastEnd) return;
+  lastStart = start;
+  lastEnd = end;
+
+  wrapper.style.height = `${state.filtered.length * ITEM_HEIGHT}px`;
+  wrapper.style.position = 'relative';
+
+  wrapper.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+  for (let i = start; i < end; i++) {
     const div = document.createElement('div');
-    div.className = 'data-card';
-    div.style.height = App.ITEM_HEIGHT + 'px';
-    div.dataset.index = index;
-    div.dataset.id = row._id;
+    div.innerHTML = renderCardHTML(state.filtered[i], i);
+    const card = div.firstElementChild;
+    card.style.position = 'absolute';
+    card.style.top = `${i * ITEM_HEIGHT}px`;
+    card.style.left = '0';
+    card.style.right = '0';
+    card.style.height = `${ITEM_HEIGHT}px`;
+    fragment.appendChild(card);
+  }
+  wrapper.appendChild(fragment);
+}
 
-    const kelaminRaw = row.KELAMIN.toUpperCase();
-    const kelamin = kelaminRaw.startsWith('L') ? 'PRIA' : kelaminRaw.startsWith('P') ? 'WANITA' : row.KELAMIN;
-    const saldo = new Intl.NumberFormat('id-ID').format(row.SALDO);
-    const jenis = (parseInt(row.JML_KARTU) || 0) <= 1 ? 'TUNGGAL' : 'SENSOR';
-    const checked = App.selected.has(row._id) ? 'checked' : '';
+function renderCardHTML(item, index) {
+  const selected = state.selected.has(item.id) ? 'selected' : '';
+  return `
+  <div class="data-card ${selected}" data-id="${item.id}" data-index="${index}">
+    <div class="card-header">
+      <h3>${escapeHtml(item.KABUPATEN)}, ${escapeHtml(item.KECAMATAN)}, ${escapeHtml(item.KELURAHAN)}</h3>
+    </div>
+    <div class="card-body">
+      <div class="card-row"><span class="card-label">NIK</span><span class="card-value">${escapeHtml(item.NIK)}</span></div>
+      <div class="card-row"><span class="card-label">KELAMIN</span><span class="card-value">${escapeHtml(item.KELAMIN_DISPLAY)}</span></div>
+      <div class="card-row"><span class="card-label">TANGGAL LAHIR</span><span class="card-value">${escapeHtml(item.TANGGAL_LAHIR)}</span></div>
+      <div style="margin: 0.4rem 0;">
+        <span class="badge badge-${item.KARTU_TYPE === 'TUNGGAL' ? 'tunggal' : 'sensor'}">${item.KARTU_TYPE}</span>
+      </div>
+      <div class="card-row"><span class="card-label">SALDO</span><span class="card-value saldo">Rp ${item.SALDO_FORMAT}</span></div>
+      <div class="card-row"><span class="card-label">PERUSAHAAN</span><span class="card-value">N/A 01-</span></div>
+      <div class="token-line">Qwer123@</div>
+      <div class="card-row"><span class="card-label">KPJ</span><span class="card-value">${escapeHtml(item.KPJ)}</span></div>
+      <div class="card-row"><span class="card-label">NAMA OSS</span><span class="card-value">${escapeHtml(item.NAMA_OSS)}</span></div>
+    </div>
+    <div class="card-actions">
+      <button class="btn btn-primary btn-sm btn-copy" data-id="${item.id}">📋 Copy</button>
+      <button class="btn btn-warning btn-sm btn-edit" data-id="${item.id}">✏️ Edit</button>
+      <button class="btn btn-danger btn-sm btn-delete" data-id="${item.id}">🗑 Hapus</button>
+      <label>
+        <input type="checkbox" class="select-cb" data-id="${item.id}" ${state.selected.has(item.id) ? 'checked' : ''}>
+        Pilih
+      </label>
+    </div>
+  </div>`;
+}
 
-    div.innerHTML = '<div class="card-header">' +
-      '<input type="checkbox" class="card-check" ' + checked + ' data-id="' + row._id + '">' +
-      '<span class="card-location">' + escapeHtml(row.KABUPATEN.toUpperCase()) + ', ' + escapeHtml(row.KECAMATAN.toUpperCase()) + ', ' + escapeHtml(row.KELURAHAN.toUpperCase()) + '</span>' +
-    '</div>' +
-    '<div class="card-body">' + escapeHtml(row.KABUPATEN.toUpperCase()) + ', ' + escapeHtml(row.KECAMATAN.toUpperCase()) + ', ' + escapeHtml(row.KELURAHAN.toUpperCase()) + '\n\n' +
-      escapeHtml(row.NIK) + '\n' + escapeHtml(kelamin) + '\n' + escapeHtml(row.TANGGAL_LAHIR) + '\n\n' +
-      escapeHtml(jenis) + '\n' + escapeHtml(saldo) + '\nPERUSAHAAN \nN/A 01- \n\nQwer123@ \n' + escapeHtml(row.KPJ) + '\n' + escapeHtml(row.NAMA_OSS) + '</div>' +
-    '<div class="card-actions">' +
-      '<button class="btn btn-sm btn-success btn-copy" data-id="' + row._id + '">📋 Copy</button>' +
-      '<button class="btn btn-sm btn-primary btn-edit" data-id="' + row._id + '">✏️ Edit</button>' +
-      '<button class="btn btn-sm btn-danger btn-delete" data-id="' + row._id + '">🗑 Hapus</button>' +
-    '</div>';
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
 
-    div.querySelector('.card-check').addEventListener('change', e => {
-      if (e.target.checked) App.selected.add(row._id);
-      else App.selected.delete(row._id);
-      updateSelectAllState();
-    });
-    div.querySelector('.btn-copy').addEventListener('click', () => copyOne(row));
-    div.querySelector('.btn-edit').addEventListener('click', () => openEdit(row));
-    div.querySelector('.btn-delete').addEventListener('click', () => deleteOne(row._id));
+// ==================== ACTIONS ====================
+function copyItem(id) {
+  const item = state.items.find(i => i.id === id);
+  if (!item) return;
+  copyToClipboard(formatItemText(item)).then(() => showToast('Data berhasil dicopy'));
+}
 
-    return div;
+function copyAll() {
+  if (!state.filtered.length) return showToast('Tidak ada data untuk dicopy', 'error');
+  const text = state.filtered.map(formatItemText).join('
+
+===================
+
+');
+  copyToClipboard(text).then(() => showToast(`${state.filtered.length} data berhasil dicopy`));
+}
+
+function editItem(id) {
+  const item = state.items.find(i => i.id === id);
+  if (!item) return;
+  state.editingId = id;
+
+  const fields = [
+    { key: 'NIK', label: 'NIK', type: 'text' },
+    { key: 'KPJ', label: 'KPJ', type: 'text' },
+    { key: 'NAMA_OSS', label: 'NAMA OSS', type: 'text' },
+    { key: 'TANGGAL_LAHIR', label: 'TANGGAL LAHIR', type: 'text' },
+    { key: 'KELAMIN', label: 'KELAMIN', type: 'text' },
+    { key: 'SALDO', label: 'SALDO', type: 'number' },
+    { key: 'JML_KARTU', label: 'JML KARTU', type: 'number' },
+    { key: 'KABUPATEN', label: 'KABUPATEN', type: 'text' },
+    { key: 'KECAMATAN', label: 'KECAMATAN', type: 'text' },
+    { key: 'KELURAHAN', label: 'KELURAHAN', type: 'text' },
+    { key: 'STATUS_AKUN', label: 'STATUS AKUN', type: 'text' },
+    { key: 'PESAN_PENGKINIAN', label: 'PESAN PENGKINIAN', type: 'text' },
+  ];
+
+  const body = document.getElementById('modalBody');
+  body.innerHTML = fields.map(f => `
+    <div class="form-group">
+      <label class="form-label">${f.label}</label>
+      <input type="${f.type}" class="form-input" id="edit-${f.key}" value="${escapeHtml(item[f.key] != null ? item[f.key] : '')}">
+    </div>
+  `).join('');
+
+  document.getElementById('editModal').classList.add('active');
+}
+
+function saveEdit() {
+  const item = state.items.find(i => i.id === state.editingId);
+  if (!item) return;
+
+  const fields = ['NIK', 'KPJ', 'NAMA_OSS', 'TANGGAL_LAHIR', 'KELAMIN', 'SALDO', 'JML_KARTU', 'KABUPATEN', 'KECAMATAN', 'KELURAHAN', 'STATUS_AKUN', 'PESAN_PENGKINIAN'];
+  for (const key of fields) {
+    const el = document.getElementById('edit-' + key);
+    if (el) {
+      item[key] = key === 'SALDO' ? parseSaldo(el.value) : key === 'JML_KARTU' ? parseJmlKartu(el.value) : el.value;
+    }
   }
 
-  function formatCardText(row) {
-    const kelaminRaw = row.KELAMIN.toUpperCase();
-    const kelamin = kelaminRaw.startsWith('L') ? 'PRIA' : kelaminRaw.startsWith('P') ? 'WANITA' : row.KELAMIN;
-    const saldo = new Intl.NumberFormat('id-ID').format(row.SALDO);
-    const jenis = (parseInt(row.JML_KARTU) || 0) <= 1 ? 'TUNGGAL' : 'SENSOR';
-    return row.KABUPATEN.toUpperCase() + ', ' + row.KECAMATAN.toUpperCase() + ', ' + row.KELURAHAN.toUpperCase() + '\n\n' +
-      row.NIK + '\n' + kelamin + '\n' + row.TANGGAL_LAHIR + '\n\n' +
-      jenis + '\n' + saldo + '\nPERUSAHAAN \nN/A 01- \n\nQwer123@ \n' + row.KPJ + '\n' + row.NAMA_OSS;
-  }
+  const k = item.KELAMIN.toUpperCase();
+  if (k === 'L' || k.includes('LAKI')) item.KELAMIN_DISPLAY = 'PRIA';
+  else if (k === 'P' || k.includes('PEREMPUAN')) item.KELAMIN_DISPLAY = 'WANITA';
+  else item.KELAMIN_DISPLAY = item.KELAMIN || '-';
 
-  function copyOne(row) {
-    const text = formatCardText(row);
-    navigator.clipboard.writeText(text).then(() => showToast('Data disalin ke clipboard'))
-      .catch(() => {
-        const ta = document.createElement('textarea');
-        ta.value = text; document.body.appendChild(ta); ta.select();
-        document.execCommand('copy'); document.body.removeChild(ta);
-        showToast('Data disalin ke clipboard');
-      });
-  }
+  item._statusNorm = item.STATUS_AKUN.toUpperCase().replace(/[_\s]/g, '');
+  item.KARTU_TYPE = item.JML_KARTU <= 1 ? 'TUNGGAL' : 'SENSOR';
+  item.SALDO_FORMAT = formatSaldo(item.SALDO);
+  item.KABUPATEN = String(item.KABUPATEN).toUpperCase();
+  item.KECAMATAN = String(item.KECAMATAN).toUpperCase();
+  item.KELURAHAN = String(item.KELURAHAN).toUpperCase();
 
-  function copyAll() {
-    if (!App.displayData.length) { showToast('Tidak ada data untuk disalin'); return; }
-    const text = App.displayData.map(formatCardText).join('\n\n==========\n\n');
-    navigator.clipboard.writeText(text).then(() => showToast(App.displayData.length + ' data disalin'))
-      .catch(() => {
-        const ta = document.createElement('textarea');
-        ta.value = text; document.body.appendChild(ta); ta.select();
-        document.execCommand('copy'); document.body.removeChild(ta);
-        showToast(App.displayData.length + ' data disalin');
-      });
-  }
+  saveToDB().then(() => {
+    applyFilters();
+    closeEdit();
+    showToast('Data berhasil diupdate');
+  });
+}
 
-  function deleteOne(id) {
-    if (!confirm('Yakin hapus data ini?')) return;
-    App.rawData = App.rawData.filter(r => r._id !== id);
-    App.selected.delete(id);
-    applyPipeline();
-    persistData(); // Re-persist after deletion
-    showToast('Data dihapus');
-  }
+function closeEdit() {
+  document.getElementById('editModal').classList.remove('active');
+  state.editingId = null;
+}
 
-  function selectAll(checked) {
-    if (checked) App.displayData.forEach(r => App.selected.add(r._id));
-    else App.selected.clear();
+function deleteItem(id) {
+  if (!confirm('Yakin ingin menghapus data ini?')) return;
+  state.items = state.items.filter(i => i.id !== id);
+  state.selected.delete(id);
+  saveToDB().then(() => {
+    applyFilters();
+    showToast('Data berhasil dihapus');
+  });
+}
+
+function selectAll() {
+  if (state.selected.size === state.filtered.length && state.filtered.length > 0) {
+    state.selected.clear();
+    showToast('Semua data tidak dipilih');
+  } else {
+    for (const item of state.filtered) state.selected.add(item.id);
+    showToast(`${state.filtered.length} data dipilih`);
+  }
+  lastStart = -1; lastEnd = -1;
+  renderVirtual();
+  saveFilters();
+  updateStats();
+}
+
+function deleteSelected() {
+  if (!state.selected.size) return showToast('Tidak ada data terpilih', 'error');
+  if (!confirm(`Yakin ingin menghapus ${state.selected.size} data terpilih?`)) return;
+  state.items = state.items.filter(i => !state.selected.has(i.id));
+  state.selected.clear();
+  saveToDB().then(() => {
+    applyFilters();
+    showToast('Data terpilih berhasil dihapus');
+  });
+}
+
+function clearAllData() {
+  if (!confirm('Yakin ingin menghapus SEMUA data? Tindakan ini tidak bisa dibatalkan.')) return;
+  state.items = [];
+  state.selected.clear();
+  saveToDB().then(() => {
+    applyFilters();
+    showToast('Semua data berhasil dihapus');
+  });
+}
+
+// ==================== DOWNLOADS ====================
+function downloadBlob(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function downloadTXT() {
+  if (!state.filtered.length) return showToast('Tidak ada data', 'error');
+  const text = state.filtered.map(formatItemText).join('
+
+===================
+
+');
+  downloadBlob(text, 'hasil_filter.txt', 'text/plain');
+}
+
+function downloadCSV() {
+  if (!state.filtered.length) return showToast('Tidak ada data', 'error');
+  const headers = ['KABUPATEN', 'KECAMATAN', 'KELURAHAN', 'NIK', 'KELAMIN', 'TANGGAL_LAHIR', 'KARTU', 'SALDO', 'PERUSAHAAN', 'TOKEN', 'KPJ', 'NAMA_OSS'];
+  const rows = state.filtered.map(item => [
+    item.KABUPATEN, item.KECAMATAN, item.KELURAHAN,
+    item.NIK, item.KELAMIN_DISPLAY, item.TANGGAL_LAHIR,
+    item.KARTU_TYPE, item.SALDO, 'N/A 01-', 'Qwer123@',
+    item.KPJ, item.NAMA_OSS
+  ]);
+  const csv = [headers, ...rows].map(r =>
+    r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')
+  ).join('
+');
+  downloadBlob(csv, 'hasil_filter.csv', 'text/csv;charset=utf-8;');
+}
+
+function downloadXLSX() {
+  if (!state.filtered.length) return showToast('Tidak ada data', 'error');
+  if (typeof XLSX === 'undefined') return showToast('SheetJS tidak tersedia', 'error');
+  const data = state.filtered.map(item => ({
+    'KABUPATEN': item.KABUPATEN,
+    'KECAMATAN': item.KECAMATAN,
+    'KELURAHAN': item.KELURAHAN,
+    'NIK': item.NIK,
+    'KELAMIN': item.KELAMIN_DISPLAY,
+    'TANGGAL_LAHIR': item.TANGGAL_LAHIR,
+    'KARTU': item.KARTU_TYPE,
+    'SALDO': item.SALDO,
+    'PERUSAHAAN': 'N/A 01-',
+    'TOKEN': 'Qwer123@',
+    'KPJ': item.KPJ,
+    'NAMA_OSS': item.NAMA_OSS
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Hasil Filter');
+  XLSX.writeFile(wb, 'hasil_filter.xlsx');
+}
+
+// ==================== STORAGE ====================
+function saveFilters() {
+  const data = {
+    filters: state.filters,
+    darkMode: state.darkMode,
+    selected: Array.from(state.selected)
+  };
+  localStorage.setItem('xlsxExtract_settings', JSON.stringify(data));
+}
+
+function loadFilters() {
+  try {
+    const raw = localStorage.getItem('xlsxExtract_settings');
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (data.filters) state.filters = data.filters;
+      if (data.darkMode !== undefined) state.darkMode = data.darkMode;
+      if (data.selected) state.selected = new Set(data.selected);
+    }
+  } catch (e) { console.error(e); }
+}
+
+function applyLoadedFilters() {
+  document.getElementById('filterKabupaten').value = state.filters.kabupaten;
+  document.getElementById('filterKecamatan').value = state.filters.kecamatan;
+  document.getElementById('filterKelurahan').value = state.filters.kelurahan;
+  document.getElementById('searchInput').value = state.filters.search;
+  document.getElementById('sortSelect').value = state.filters.sort;
+  if (state.darkMode) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.getElementById('themeToggle').textContent = '☀️';
+  }
+}
+
+// ==================== THEME ====================
+function toggleTheme() {
+  state.darkMode = !state.darkMode;
+  document.documentElement.setAttribute('data-theme', state.darkMode ? 'dark' : 'light');
+  document.getElementById('themeToggle').textContent = state.darkMode ? '☀️' : '🌙';
+  saveFilters();
+}
+
+// ==================== EVENTS ====================
+function setupEvents() {
+  const fileInput = document.getElementById('fileInput');
+  const uploadZone = document.getElementById('uploadZone');
+
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length) processFiles(e.target.files);
+    e.target.value = '';
+  });
+
+  uploadZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadZone.classList.add('dragover');
+  });
+
+  uploadZone.addEventListener('dragleave', () => {
+    uploadZone.classList.remove('dragover');
+  });
+
+  uploadZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadZone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) processFiles(e.dataTransfer.files);
+  });
+
+  document.getElementById('filterKabupaten').addEventListener('change', (e) => {
+    state.filters.kabupaten = e.target.value;
+    state.filters.kecamatan = '';
+    state.filters.kelurahan = '';
+    applyFilters();
+  });
+
+  document.getElementById('filterKecamatan').addEventListener('change', (e) => {
+    state.filters.kecamatan = e.target.value;
+    state.filters.kelurahan = '';
+    applyFilters();
+  });
+
+  document.getElementById('filterKelurahan').addEventListener('change', (e) => {
+    state.filters.kelurahan = e.target.value;
+    applyFilters();
+  });
+
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    state.filters.search = e.target.value;
+    applyFilters();
+  });
+
+  document.getElementById('sortSelect').addEventListener('change', (e) => {
+    state.filters.sort = e.target.value;
+    applyFilters();
+  });
+
+  document.getElementById('resultsContainer').addEventListener('scroll', () => {
+    requestAnimationFrame(renderVirtual);
+  });
+
+  document.getElementById('virtualWrapper').addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-copy, .btn-edit, .btn-delete');
+    if (btn) {
+      const id = btn.dataset.id;
+      if (btn.classList.contains('btn-copy')) copyItem(id);
+      else if (btn.classList.contains('btn-edit')) editItem(id);
+      else if (btn.classList.contains('btn-delete')) deleteItem(id);
+      return;
+    }
+
+    const cb = e.target.closest('.select-cb');
+    if (cb) {
+      const id = cb.dataset.id;
+      if (cb.checked) state.selected.add(id);
+      else state.selected.delete(id);
+      saveFilters();
+      const card = cb.closest('.data-card');
+      if (card) card.classList.toggle('selected', cb.checked);
+      updateStats();
+    }
+  });
+
+  document.getElementById('editModal').addEventListener('click', (e) => {
+    if (e.target.id === 'editModal') closeEdit();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeEdit();
+  });
+
+  window.addEventListener('resize', () => {
+    lastStart = -1; lastEnd = -1;
     renderVirtual();
-    updateSelectAllState();
+  });
+}
+
+// ==================== INIT ====================
+async function init() {
+  loadFilters();
+
+  if (typeof XLSX === 'undefined') {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background: #ef4444; color: white; padding: 0.75rem; text-align: center; font-size: 0.875rem; position: sticky; top: 0; z-index: 101;';
+    banner.innerHTML = '⚠️ Library SheetJS belum dimuat. Untuk penggunaan offline, download <a href="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js" style="color: #fff; text-decoration: underline; font-weight: 700;">xlsx.full.min.js</a> dan letakkan di folder yang sama, lalu ubah src script di file ini.';
+    document.body.insertBefore(banner, document.body.firstChild);
   }
 
-  function deleteSelected() {
-    if (!App.selected.size) { showToast('Tidak ada data terpilih'); return; }
-    if (!confirm('Hapus ' + App.selected.size + ' data terpilih?')) return;
-    App.rawData = App.rawData.filter(r => !App.selected.has(r._id));
-    App.selected.clear();
-    applyPipeline();
-    persistData(); // Re-persist after deletion
-    showToast('Data terpilih dihapus');
+  await initDB();
+  const saved = await loadFromDB();
+  if (saved && saved.length) {
+    state.items = saved;
+    showToast(`${saved.length} data dimuat dari penyimpanan lokal`);
   }
 
-  function updateSelectAllState() {
-    const allSelected = App.displayData.length > 0 && App.displayData.every(r => App.selected.has(r._id));
-    els.selectAll.checked = allSelected;
-    els.selectAll.indeterminate = !allSelected && App.displayData.some(r => App.selected.has(r._id));
-  }
+  applyLoadedFilters();
+  applyFilters();
+  setupEvents();
+}
 
-  function downloadTXT() {
-    if (!App.displayData.length) { showToast('Tidak ada data'); return; }
-    const text = App.displayData.map(formatCardText).join('\n\n==========\n\n');
-    downloadBlob(text, 'hasil_ekstrak.txt', 'text/plain');
-  }
-
-  function downloadCSV() {
-    if (!App.displayData.length) { showToast('Tidak ada data'); return; }
-    const headers = ['NIK','KPJ','NAMA_OSS','TANGGAL_LAHIR','KELAMIN','NOTIF','PESAN_PENGKINIAN','SALDO','JML_KARTU','KABUPATEN','KECAMATAN','KELURAHAN','STATUS_AKUN'];
-    const escape = s => '"' + String(s).replace(/"/g, '""') + '"';
-    const rows = App.displayData.map(r => headers.map(h => escape(r[h] || '')).join(','));
-    const csv = [headers.join(','), ...rows].join('\n');
-    downloadBlob(csv, 'hasil_ekstrak.csv', 'text/csv');
-  }
-
-  function downloadXLSX() {
-    if (!App.displayData.length) { showToast('Tidak ada data'); return; }
-    if (!window.XLSX) { showToast('SheetJS tidak tersedia. Gunakan mode online atau download library.'); return; }
-    const clean = App.displayData.map(r => {
-      const {_id, ...rest} = r;
-      return rest;
-    });
-    const ws = XLSX.utils.json_to_sheet(clean);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Hasil Filter');
-    XLSX.writeFile(wb, 'hasil_ekstrak.xlsx');
-  }
-
-  function downloadBlob(content, filename, mime) {
-    const blob = new Blob([content], { type: mime + ';charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  function openEdit(row) {
-    App.editingId = row._id;
-    $('edit-nik').value = row.NIK;
-    $('edit-kpj').value = row.KPJ;
-    $('edit-nama').value = row.NAMA_OSS;
-    $('edit-tgl').value = row.TANGGAL_LAHIR;
-    $('edit-kelamin').value = row.KELAMIN;
-    $('edit-saldo').value = row.SALDO;
-    $('edit-kartu').value = row.JML_KARTU;
-    $('edit-kab').value = row.KABUPATEN;
-    $('edit-kec').value = row.KECAMATAN;
-    $('edit-kel').value = row.KELURAHAN;
-    $('edit-status').value = row.STATUS_AKUN;
-    $('edit-pesan').value = row.PESAN_PENGKINIAN;
-    els.editModal.classList.add('active');
-  }
-
-  function closeModal() {
-    els.editModal.classList.remove('active');
-    App.editingId = null;
-  }
-
-  function saveEdit() {
-    if (!App.editingId) return;
-    const row = App.rawData.find(r => r._id === App.editingId);
-    if (!row) return;
-    row.NIK = $('edit-nik').value.trim();
-    row.KPJ = $('edit-kpj').value.trim();
-    row.NAMA_OSS = $('edit-nama').value.trim();
-    row.TANGGAL_LAHIR = $('edit-tgl').value.trim();
-    row.KELAMIN = $('edit-kelamin').value.trim();
-    row.SALDO = parseFloat($('edit-saldo').value) || 0;
-    row.JML_KARTU = parseInt($('edit-kartu').value) || 0;
-    row.KABUPATEN = $('edit-kab').value.trim();
-    row.KECAMATAN = $('edit-kec').value.trim();
-    row.KELURAHAN = $('edit-kel').value.trim();
-    row.STATUS_AKUN = $('edit-status').value.trim();
-    row.PESAN_PENGKINIAN = $('edit-pesan').value.trim();
-    applyPipeline();
-    persistData(); // Re-persist after edit
-    closeModal();
-    showToast('Perubahan disimpan');
-  }
-
-  function resetFilters() {
-    App.filters = { search: '', kab: '', kec: '', kel: '' };
-    App.sort = 'default';
-    els.search.value = '';
-    els.sort.value = 'default';
-    applyPipeline();
-    saveState();
-    showToast('Filter direset');
-  }
-
-  function toggleTheme() {
-    App.isDark = !App.isDark;
-    applyTheme();
-    saveState();
-  }
-  function applyTheme() {
-    document.body.setAttribute('data-theme', App.isDark ? 'dark' : 'light');
-    els.themeToggle.textContent = App.isDark ? '☀️' : '🌙';
-  }
-
-  function saveState() {
-    try {
-      localStorage.setItem(STORAGE_KEY_STATE, JSON.stringify({
-        filters: App.filters,
-        sort: App.sort,
-        isDark: App.isDark
-      }));
-    } catch(e) {}
-  }
-  function loadState() {
-    try {
-      const s = JSON.parse(localStorage.getItem(STORAGE_KEY_STATE) || '{}');
-      if (s.filters) App.filters = s.filters;
-      if (s.sort) App.sort = s.sort;
-      if (s.isDark) App.isDark = s.isDark;
-      els.search.value = App.filters.search || '';
-      els.sort.value = App.sort;
-    } catch(e) {}
-  }
-
-  function showLoading(show, text) {
-    els.loading.classList.toggle('active', show);
-    if (text) els.loadingSub.textContent = text;
-    if (!show) updateProgress(0);
-  }
-  function updateProgress(pct) {
-    els.progressWrap.classList.toggle('active', pct > 0 && pct < 100);
-    els.progressBar.style.width = pct + '%';
-  }
-  function showToast(msg) {
-    els.toast.textContent = msg;
-    els.toast.classList.add('show');
-    clearTimeout(showToast.t);
-    showToast.t = setTimeout(() => els.toast.classList.remove('show'), 2500);
-  }
-  function escapeHtml(str) {
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-  function debounce(fn, ms) {
-    let t;
-    return function() {
-      clearTimeout(t);
-      t = setTimeout(() => fn.apply(this, arguments), ms);
-    };
-  }
-})();
+init();
 </script>
+
 </body>
 </html>
