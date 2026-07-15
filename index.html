@@ -1,873 +1,823 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>BPJS Data Processor - Offline</title>
-<style>
-:root {
-  --bg: #f0f2f5;
-  --surface: #ffffff;
-  --text: #1a1a1a;
-  --text-sec: #555;
-  --border: #d0d4d8;
-  --primary: #0d6efd;
-  --primary-dark: #0b5ed7;
-  --success: #198754;
-  --warning: #ffc107;
-  --danger: #dc3545;
-  --info: #0dcaf0;
-  --badge-tunggal: #198754;
-  --badge-sensor: #fd7e14;
-  --shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-.dark {
-  --bg: #0f1115;
-  --surface: #1a1d24;
-  --text: #e4e6eb;
-  --text-sec: #a0a3a8;
-  --border: #2c3038;
-  --primary: #3d8bfd;
-  --primary-dark: #5c9dff;
-  --success: #3dd598;
-  --warning: #ffcc00;
-  --danger: #ff6b6b;
-  --info: #4cc9f0;
-  --badge-tunggal: #3dd598;
-  --badge-sensor: #ff9f43;
-  --shadow: 0 1px 3px rgba(0,0,0,0.4);
-}
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
-body { display: flex; flex-direction: column; overflow: hidden; }
-
-/* Header */
-.header { flex-shrink: 0; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; z-index: 10; }
-.header h1 { font-size: 16px; margin: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.header-actions { display: flex; gap: 6px; align-items: center; }
-.btn-icon { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; transition: all .15s; }
-.btn-icon:active { transform: scale(0.95); background: var(--bg); }
-
-/* Upload */
-.upload-zone { flex-shrink: 0; margin: 10px 16px; padding: 16px; border: 2px dashed var(--border); border-radius: 10px; text-align: center; background: var(--surface); cursor: pointer; transition: all .2s; position: relative; }
-.upload-zone.dragover { border-color: var(--primary); background: rgba(13,110,253,0.05); }
-.upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-.upload-text { font-size: 13px; color: var(--text-sec); pointer-events: none; }
-.upload-text strong { color: var(--text); display: block; margin-bottom: 4px; font-size: 14px; }
-
-/* Progress */
-.progress-area { flex-shrink: 0; margin: 0 16px 10px; max-height: 120px; overflow-y: auto; }
-.progress-item { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; font-size: 12px; }
-.progress-header { display: flex; justify-content: space-between; margin-bottom: 4px; color: var(--text-sec); }
-.progress-bar { height: 4px; background: var(--bg); border-radius: 2px; overflow: hidden; }
-.progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width .2s; }
-
-/* Toolbar */
-.toolbar { flex-shrink: 0; padding: 8px 16px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.search-wrap { flex: 1; min-width: 140px; position: relative; }
-.search-wrap input { width: 100%; padding: 8px 10px 8px 32px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 13px; outline: none; }
-.search-wrap::before { content: "🔍"; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; opacity: .6; }
-.btn { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; touch-action: manipulation; }
-.btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
-.btn-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
-.btn-success { background: var(--success); border-color: var(--success); color: #fff; }
-.btn:disabled { opacity: .5; cursor: not-allowed; }
-.btn:active { transform: scale(0.97); }
-
-/* Stats */
-.stats-bar { flex-shrink: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); margin: 0 16px 10px; border-radius: 8px; overflow: hidden; }
-.stat-box { background: var(--surface); padding: 10px 6px; text-align: center; }
-.stat-val { font-size: 15px; font-weight: 700; color: var(--primary); display: block; line-height: 1.2; }
-.stat-label { font-size: 10px; color: var(--text-sec); text-transform: uppercase; letter-spacing: .3px; }
-
-/* List */
-.list-container { flex: 1; overflow-y: auto; position: relative; -webkit-overflow-scrolling: touch; margin: 0 16px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
-.list-phantom { position: absolute; top: 0; left: 0; right: 0; z-index: 0; pointer-events: none; }
-.list-content { position: absolute; top: 0; left: 0; right: 0; will-change: transform; z-index: 1; }
-
-/* Card */
-.item-card { height: 132px; padding: 10px 12px; border-bottom: 1px solid var(--border); box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; }
-.item-card:nth-child(odd) { background: rgba(0,0,0,0.015); }
-.dark .item-card:nth-child(odd) { background: rgba(255,255,255,0.015); }
-.item-lokasi { font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.item-row { font-size: 12px; line-height: 1.5; color: var(--text-sec); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.item-row .label { color: var(--text); font-weight: 500; display: inline-block; min-width: 70px; }
-.item-row .val { color: var(--text); }
-.badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; margin-left: 6px; color: #fff; vertical-align: middle; }
-.badge-tunggal { background: var(--badge-tunggal); }
-.badge-sensor { background: var(--badge-sensor); }
-.item-actions { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 4px; }
-.item-actions .btn { padding: 4px 8px; font-size: 11px; border-radius: 6px; min-height: 26px; justify-content: center; }
-
-/* Empty */
-.empty-state { text-align: center; padding: 40px 20px; color: var(--text-sec); font-size: 13px; }
-
-/* Modal */
-.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
-.modal.show { display: flex; }
-.modal-content { background: var(--surface); border-radius: 12px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; padding: 16px; box-shadow: var(--shadow); }
-.modal-title { margin: 0 0 12px; font-size: 16px; }
-.form-group { margin-bottom: 10px; }
-.form-group label { display: block; font-size: 12px; color: var(--text-sec); margin-bottom: 3px; font-weight: 500; }
-.form-group input, .form-group select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 13px; outline: none; }
-.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
-
-/* Toast */
-.toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--surface); color: var(--text); padding: 10px 16px; border-radius: 8px; font-size: 13px; box-shadow: var(--shadow); border: 1px solid var(--border); opacity: 0; transition: all .3s; z-index: 200; white-space: nowrap; max-width: 90vw; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
-.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-.toast.warn { border-color: var(--warning); color: #856404; background: #fff3cd; }
-.dark .toast.warn { color: #ffeeba; background: #332a00; }
-.toast.error { border-color: var(--danger); color: #721c24; background: #f8d7da; }
-.dark .toast.error { color: #f5c6cb; background: #330d0f; }
-.toast.success { border-color: var(--success); color: #155724; background: #d4edda; }
-.dark .toast.success { color: #c3e6cb; background: #0f2e18; }
-
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-@media (max-width: 480px) {
-  .stats-bar { grid-template-columns: repeat(2, 1fr); }
-  .item-card { height: 138px; }
-  .item-actions { flex-direction: row; top: auto; bottom: 6px; right: 6px; transform: none; }
-  .header h1 { font-size: 14px; }
-}
-</style>
-<!-- 
-  UNTUK MODE OFFLINE PENUH: 
-  Download https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.mini.min.js 
-  lalu tempelkan isinya di dalam tag <script> berikut (ganti src menjadi inline).
--->
+<meta name="theme-color" content="#0f172a">
+<title>Data Filter - BPJS</title>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.mini.min.js"></script>
-<base target="_blank">
+<style>
+  :root {
+    --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9;
+    --text: #0f172a; --text-2: #475569; --border: #e2e8f0;
+    --primary: #2563eb; --primary-dark: #1d4ed8; --danger: #dc2626; --success: #16a34a;
+    --shadow: 0 1px 3px rgba(0,0,0,0.1); --radius: 8px; --item-h: 152px;
+  }
+  .dark {
+    --bg: #0f172a; --surface: #1e293b; --surface-2: #334155;
+    --text: #f8fafc; --text-2: #94a3b8; --border: #334155;
+    --primary: #3b82f6; --primary-dark: #2563eb; --danger: #ef4444; --success: #22c55e;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+  #app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+  header { flex: 0 0 auto; padding: 10px 12px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; z-index: 10; }
+  header h1 { font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .btn-icon { width: 36px; height: 36px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface-2); color: var(--text); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .15s; }
+  .btn-icon:active { transform: scale(0.95); background: var(--border); }
+  .btn { padding: 8px 14px; border-radius: var(--radius); border: none; background: var(--primary); color: #fff; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; transition: all .15s; }
+  .btn:active { transform: scale(0.98); background: var(--primary-dark); }
+  .btn.danger { background: var(--danger); }
+  .btn.secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  #stats { flex: 0 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 8px 12px; background: var(--bg); }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; text-align: center; }
+  .stat-value { font-size: 15px; font-weight: 700; color: var(--primary); line-height: 1.2; }
+  .stat-label { font-size: 10px; color: var(--text-2); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.3px; }
+  #toolbar { flex: 0 0 auto; padding: 6px 12px; display: flex; gap: 6px; align-items: center; background: var(--bg); border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+  #toolbar::-webkit-scrollbar { display: none; }
+  #search { flex: 1 1 auto; min-width: 120px; padding: 8px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 14px; outline: none; }
+  #search:focus { border-color: var(--primary); }
+  #upload-area { flex: 0 0 auto; padding: 12px; }
+  .dropzone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 16px; text-align: center; background: var(--surface); transition: all .2s; cursor: pointer; position: relative; }
+  .dropzone.dragover { border-color: var(--primary); background: var(--surface-2); }
+  .dropzone p { color: var(--text-2); font-size: 13px; margin-top: 6px; }
+  #file-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  #progress-area { flex: 0 0 auto; padding: 0 12px 8px; display: none; }
+  .progress-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; }
+  .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .progress-file { font-weight: 600; font-size: 13px; }
+  .progress-bar { height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width .2s; border-radius: 3px; }
+  .progress-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-2); margin-top: 4px; }
+  #list-container { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; position: relative; background: var(--bg); -webkit-overflow-scrolling: touch; }
+  #list-content { position: relative; width: 100%; }
+  .item { position: absolute; left: 0; right: 0; padding: 8px 12px; height: var(--item-h); display: flex; flex-direction: column; justify-content: center; }
+  .item-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; height: 100%; display: flex; flex-direction: column; gap: 4px; box-shadow: var(--shadow); }
+  .item-lokasi { font-size: 12px; font-weight: 700; color: var(--primary); }
+  .item-row { display: flex; align-items: center; gap: 6px; font-size: 13px; flex-wrap: wrap; }
+  .item-label { color: var(--text-2); font-size: 11px; min-width: 40px; }
+  .item-value { font-weight: 600; word-break: break-all; }
+  .item-saldo { font-size: 14px; font-weight: 700; color: var(--success); }
+  .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border); }
+  .badge.ok { background: rgba(22,163,74,0.15); color: var(--success); border-color: rgba(22,163,74,0.3); }
+  .badge.warn { background: rgba(220,38,38,0.15); color: var(--danger); border-color: rgba(220,38,38,0.3); }
+  .copy-btn { width: 22px; height: 22px; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--text-2); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; margin-left: 2px; }
+  .copy-btn:active { background: var(--primary); color: #fff; }
+  .item-actions { display: flex; gap: 4px; margin-top: 2px; }
+  .item-actions button { padding: 4px 8px; font-size: 11px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); cursor: pointer; }
+  .item-actions button:active { background: var(--primary); color: #fff; }
+  .empty { text-align: center; padding: 40px 20px; color: var(--text-2); }
+  .empty svg { width: 48px; height: 48px; opacity: 0.3; margin-bottom: 12px; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--surface); border-radius: var(--radius); width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); }
+  .modal-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .modal-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 12px; font-weight: 600; color: var(--text-2); text-transform: uppercase; }
+  .form-group input, .form-group select { padding: 8px 10px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 14px; outline: none; }
+  .modal-footer { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+  #toast-container { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 200; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+  .toast { background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 10px 16px; border-radius: var(--radius); box-shadow: var(--shadow); font-size: 13px; pointer-events: auto; animation: slideUp .3s ease; max-width: 90vw; }
+  .toast.success { border-color: var(--success); }
+  .toast.error { border-color: var(--danger); }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  #undo-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 10px 16px; display: none; align-items: center; justify-content: space-between; z-index: 50; }
+  #undo-bar.show { display: flex; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+</style>
 </head>
 <body>
-
-<div class="header">
-  <h1>📁 BPJS Data Processor</h1>
-  <div class="header-actions">
-    <button class="btn-icon" id="btn-dark" title="Dark Mode">🌙</button>
+<div id="app">
+  <header>
+    <h1>Data Filter</h1>
+    <div style="display:flex;gap:6px;">
+      <button class="btn-icon" id="btn-dark" title="Toggle Dark">&#127769;</button>
+      <button class="btn-icon" id="btn-export" title="Export">&#11015;&#65039;</button>
+      <button class="btn-icon" id="btn-copy-all" title="Copy Semua">&#128203;</button>
+    </div>
+  </header>
+  <div id="stats">
+    <div class="stat"><div class="stat-value" id="st-files">0</div><div class="stat-label">File</div></div>
+    <div class="stat"><div class="stat-value" id="st-read">0</div><div class="stat-label">Baca</div></div>
+    <div class="stat"><div class="stat-value" id="st-lolos">0</div><div class="stat-label">Lolos</div></div>
+    <div class="stat"><div class="stat-value" id="st-saldo">0</div><div class="stat-label">Saldo</div></div>
   </div>
-</div>
-
-<div class="upload-zone" id="drop-zone">
-  <input type="file" id="file-input" multiple accept=".xlsx,.xls,.csv,.txt">
-  <div class="upload-text">
-    <strong>Tap atau Seret File</strong>
-    XLSX, XLS, CSV, TXT — Banyak file sekaligus
+  <div id="toolbar">
+    <input type="text" id="search" placeholder="Cari..." autocomplete="off">
+    <button class="btn secondary" id="btn-sort">Sort</button>
+    <button class="btn secondary" id="btn-clear">Clear</button>
   </div>
-</div>
-
-<div class="progress-area" id="progress-area"></div>
-
-<div class="toolbar">
-  <div class="search-wrap">
-    <input type="text" id="search-input" placeholder="Cari NIK, KPJ, Nama, Lokasi..." autocomplete="off">
+  <div id="upload-area">
+    <div class="dropzone" id="dropzone">
+      <input type="file" id="file-input" multiple accept=".xlsx,.xls,.csv,.txt">
+      <svg class="icon" style="width:32px;height:32px;margin:0 auto;display:block;opacity:0.5;" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <p>Tap untuk pilih file<br>atau drag &amp; drop<br><span style="font-size:11px;opacity:0.7;">XLSX, XLS, CSV, TXT</span></p>
+    </div>
   </div>
-  <button class="btn" id="btn-cancel" disabled>⛔ Batal</button>
-  <button class="btn" id="btn-undo" disabled>↩️ Undo</button>
-  <button class="btn btn-danger" id="btn-clear">🗑️ Hapus Semua</button>
-</div>
-
-<div class="stats-bar">
-  <div class="stat-box"><span class="stat-val" id="st-files">0</span><span class="stat-label">File</span></div>
-  <div class="stat-box"><span class="stat-val" id="st-read">0</span><span class="stat-label">Dibaca</span></div>
-  <div class="stat-box"><span class="stat-val" id="st-pass">0</span><span class="stat-label">Lolos</span></div>
-  <div class="stat-box"><span class="stat-val" id="st-saldo">0</span><span class="stat-label">Total Saldo</span></div>
-</div>
-
-<div class="toolbar" style="border-top:1px solid var(--border); margin-top:-6px;">
-  <select class="btn" id="sort-select">
-    <option value="">Urutkan...</option>
-    <option value="nik">NIK</option>
-    <option value="kpj">KPJ</option>
-    <option value="namaOss">NAMA_OSS</option>
-    <option value="saldoNum">SALDO</option>
-    <option value="kabupaten">KABUPATEN</option>
-    <option value="kecamatan">KECAMATAN</option>
-    <option value="kelurahan">KELURAHAN</option>
-  </select>
-  <button class="btn btn-primary" id="btn-copy-all">📋 Copy Semua</button>
-  <button class="btn" id="btn-export-xlsx">📊 XLSX</button>
-  <button class="btn" id="btn-export-csv">📄 CSV</button>
-  <button class="btn" id="btn-export-txt">📝 TXT</button>
-</div>
-
-<div class="list-container" id="list-container">
-  <div class="list-phantom" id="list-phantom"></div>
-  <div class="list-content" id="list-content"></div>
-  <div class="empty-state" id="empty-state">Belum ada data. Upload file untuk memulai.</div>
-</div>
-
-<div class="modal" id="modal-edit">
-  <div class="modal-content">
-    <h3 class="modal-title">✏️ Edit Data</h3>
-    <div class="form-group"><label>NIK</label><input id="edit-nik"></div>
-    <div class="form-group"><label>KPJ</label><input id="edit-kpj"></div>
-    <div class="form-group"><label>NAMA_OSS</label><input id="edit-namaOss"></div>
-    <div class="form-group"><label>TANGGAL_LAHIR</label><input id="edit-tglLahir"></div>
-    <div class="form-group"><label>KELAMIN</label><input id="edit-kelamin"></div>
-    <div class="form-group"><label>SALDO</label><input id="edit-saldo"></div>
-    <div class="form-group"><label>JML_KARTU</label><input id="edit-jmlKartu" type="number"></div>
-    <div class="form-group"><label>KABUPATEN</label><input id="edit-kabupaten"></div>
-    <div class="form-group"><label>KECAMATAN</label><input id="edit-kecamatan"></div>
-    <div class="form-group"><label>KELURAHAN</label><input id="edit-kelurahan"></div>
-    <div class="form-group"><label>PERUSAHAAN</label><input id="edit-perusahaan"></div>
-    <div class="modal-actions">
-      <button class="btn" id="edit-close">Batal</button>
-      <button class="btn btn-primary" id="edit-save">Simpan</button>
+  <div id="progress-area">
+    <div class="progress-card">
+      <div class="progress-header">
+        <span class="progress-file" id="prog-file">-</span>
+        <button class="btn danger" style="padding:4px 10px;font-size:12px;" id="btn-cancel">Batal</button>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+      <div class="progress-meta">
+        <span id="prog-curr">0%</span>
+        <span id="prog-total">File 1 dari 1</span>
+      </div>
+    </div>
+  </div>
+  <div id="list-container">
+    <div id="list-content"></div>
+    <div class="empty" id="empty-state" style="display:none;">
+      <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      <p>Belum ada data</p>
     </div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="modal-overlay" id="modal-edit">
+  <div class="modal">
+    <div class="modal-header"><h3>Edit Data</h3><button class="btn-icon" id="btn-close-edit">&#10005;</button></div>
+    <div class="modal-body" id="edit-body"></div>
+    <div class="modal-footer">
+      <button class="btn secondary" id="btn-cancel-edit">Batal</button>
+      <button class="btn" id="btn-save-edit">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-export">
+  <div class="modal" style="max-width:300px;">
+    <div class="modal-header"><h3>Export</h3><button class="btn-icon" id="btn-close-export">&#10005;</button></div>
+    <div class="modal-body" style="gap:8px;">
+      <button class="btn" style="width:100%;justify-content:center;" id="exp-xlsx">Export XLSX</button>
+      <button class="btn" style="width:100%;justify-content:center;" id="exp-csv">Export CSV</button>
+      <button class="btn" style="width:100%;justify-content:center;" id="exp-txt">Export TXT</button>
+    </div>
+  </div>
+</div>
+
+<div id="undo-bar">
+  <span id="undo-text">Data dihapus</span>
+  <button class="btn" id="btn-undo">Undo</button>
+</div>
+
+<div id="toast-container"></div>
 
 <script>
-(function(){
-'use strict';
+(function() {
+  'use strict';
 
-/* ===================== CONFIG ===================== */
-const REQUIRED_COLS = ['NIK','KPJ','NAMA_OSS','TANGGAL_LAHIR','KELAMIN','NOTIF','PESAN_PENGKINIAN','SALDO','JML_KARTU','KABUPATEN','KECAMATAN','KELURAHAN','STATUS_AKUN','PERUSAHAAN'];
-const ITEM_HEIGHT = 132; // px (harus sama dengan .item-card height)
-const BUFFER = 6;        // item buffer di luar viewport
-const AUTO_SAVE_MS = 2500;
-const MAX_UNDO = 50;
-const LS_KEY = 'bpjs_data_v2';
-const LS_DARK = 'bpjs_dark_v2';
+  var DB_KEY = 'bpjs_data_v3';
+  var META_KEY = 'bpjs_meta_v3';
+  var allData = [];
+  var displayData = [];
+  var deletedStack = [];
+  var sortCol = null, sortAsc = true;
+  var nextId = 1;
+  var isProcessing = false;
+  var processor = null;
+  var totalFiles = 0, totalRead = 0, totalLolos = 0, totalSaldo = 0;
+  var ITEM_H = 152;
+  var pool = [];
+  var editId = null;
 
-/* ===================== STATE ===================== */
-let allData = [];        // master data (lolos filter)
-let displayData = [];    // hasil search + sort
-let deletedStack = [];
-let duplicateSet = new Set();
-let sortState = { col: null, dir: 'asc' }; // asc/desc
-let searchTimer = null;
-let autoSaveTimer = null;
-let abortCtrl = null;
-let isProcessing = false;
-let totalFiles = 0;
-let totalRead = 0;
-let totalSaldo = 0;
-let editingId = null;
+  function $(id) { return document.getElementById(id); }
+  var els = {
+    listContainer: $('list-container'), listContent: $('list-content'),
+    empty: $('empty-state'), search: $('search'), stats: {
+      files: $('st-files'), read: $('st-read'), lolos: $('st-lolos'), saldo: $('st-saldo')
+    },
+    progressArea: $('progress-area'), progFile: $('prog-file'), progFill: $('prog-fill'),
+    progCurr: $('prog-curr'), progTotal: $('prog-total'), btnCancel: $('btn-cancel'),
+    dropzone: $('dropzone'), fileInput: $('file-input'),
+    modalEdit: $('modal-edit'), editBody: $('edit-body'), modalExport: $('modal-export'),
+    undoBar: $('undo-bar'), undoText: $('undo-text')
+  };
 
-/* ===================== DOM ===================== */
-const $ = id => document.getElementById(id);
-const dropZone = $('drop-zone');
-const fileInput = $('file-input');
-const progressArea = $('progress-area');
-const listContainer = $('list-container');
-const listPhantom = $('list-phantom');
-const listContent = $('list-content');
-const emptyState = $('empty-state');
-const searchInput = $('search-input');
-const sortSelect = $('sort-select');
-const btnCancel = $('btn-cancel');
-const btnUndo = $('btn-undo');
-const btnClear = $('btn-clear');
-const btnDark = $('btn-dark');
-const btnCopyAll = $('btn-copy-all');
-const btnExportXLSX = $('btn-export-xlsx');
-const btnExportCSV = $('btn-export-csv');
-const btnExportTXT = $('btn-export-txt');
-const modalEdit = $('modal-edit');
-const toastEl = $('toast');
-
-/* ===================== UTILS ===================== */
-function showStatus(msg, type='info'){
-  toastEl.textContent = msg;
-  toastEl.className = 'toast show ' + type;
-  clearTimeout(showStatus.t);
-  showStatus.t = setTimeout(()=> toastEl.classList.remove('show'), 2800);
-}
-function escapeHtml(str){
-  const d=document.createElement('div');
-  d.textContent=str;
-  return d.innerHTML;
-}
-function normalizeText(str){
-  return String(str).trim().toUpperCase().replace(/[\s_]+/g,'');
-}
-function parseSaldo(str){
-  const s=String(str).trim();
-  if(!s) return 0;
-  let c=s.replace(/[^\d.,-]/g,'');
-  if(!c) return 0;
-  const ld=c.lastIndexOf('.'), lc=c.lastIndexOf(',');
-  let ns;
-  if(lc>ld){
-    ns=c.replace(/\./g,'').replace(',','.');
-  }else{
-    ns=c.replace(/,/g,'');
+  function toast(msg, type) {
+    type = type || 'success';
+    var el = document.createElement('div');
+    el.className = 'toast ' + type;
+    el.textContent = msg;
+    $('toast-container').appendChild(el);
+    setTimeout(function() { el.remove(); }, 2500);
   }
-  const n=parseFloat(ns);
-  return isNaN(n)?0:Math.floor(n);
-}
-function downloadBlob(content, filename, mime){
-  const b=new Blob([content],{type:mime});
-  const u=URL.createObjectURL(b);
-  const a=document.createElement('a');
-  a.href=u; a.download=filename;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(u);},100);
-}
-function debounce(fn,ms){
-  let t;
-  return (...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};
-}
 
-/* ===================== STORAGE ===================== */
-function saveToStorage(){
-  clearTimeout(autoSaveTimer);
-  autoSaveTimer = setTimeout(()=>{
-    try{
-      const json=JSON.stringify(allData);
-      if(json.length>4*1024*1024){ showStatus('Data >4MB, auto-save dilewati','warn'); return; }
-      localStorage.setItem(LS_KEY,json);
-    }catch(e){ showStatus('Auto-save gagal: '+e.message,'error'); }
-  },AUTO_SAVE_MS);
-}
-function loadFromStorage(){
-  try{
-    const raw=localStorage.getItem(LS_KEY);
-    if(raw){
-      const parsed=JSON.parse(raw);
-      if(Array.isArray(parsed)){
-        allData=parsed;
-        totalPass=allData.length;
-        totalSaldo=allData.reduce((s,it)=>s+(it.saldoNum||0),0);
-        duplicateSet.clear();
-        allData.forEach(it=>{
-          const k=(it.nik+'|'+it.kpj).trim();
-          if(k&&k!=='|') duplicateSet.add(k);
-        });
-        displayData=allData.slice();
-        showStatus('Data restored: '+allData.length+' baris','success');
+  function fmtNumber(n) {
+    return new Intl.NumberFormat('id-ID').format(n);
+  }
+
+  function parseSaldo(v) {
+    if (typeof v === 'number') return v;
+    if (!v) return 0;
+    var s = String(v).replace(/[^0-9]/g, '');
+    return parseInt(s, 10) || 0;
+  }
+
+  function normalizeStatus(s) {
+    return String(s || '').trim().toUpperCase().replace(/_/g, ' ').replace(/\s+/g, ' ');
+  }
+
+  function isLolos(item) {
+    return normalizeStatus(item.STATUS_AKUN) === 'BELUM TERDAFTAR' &&
+           String(item.PESAN_PENGKINIAN || '').trim().toUpperCase() === 'LAYAK' &&
+           item.SALDO >= 1000000;
+  }
+
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function() { toast('Disalin'); });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+      toast('Disalin');
+    }
+  }
+
+  function generateId() { return nextId++; }
+
+  function saveData() {
+    try {
+      var payload = JSON.stringify(allData);
+      if (payload.length > 4000000) { return; }
+      localStorage.setItem(DB_KEY, payload);
+      localStorage.setItem(META_KEY, JSON.stringify({t: Date.now(), c: allData.length}));
+    } catch(e) {}
+  }
+
+  function loadData() {
+    try {
+      var raw = localStorage.getItem(DB_KEY);
+      if (!raw) return;
+      var arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) return;
+      allData.length = 0;
+      arr.forEach(function(x) { if (x.id) allData.push(x); });
+      var maxId = 0;
+      allData.forEach(function(x) { if (x.id > maxId) maxId = x.id; });
+      nextId = maxId + 1;
+      displayData = allData.slice();
+      updateStats();
+      refreshList();
+      toast('Data restored dari cache');
+    } catch(e) {}
+  }
+
+  function initPool() {
+    var needed = Math.ceil(els.listContainer.clientHeight / ITEM_H) + 6;
+    while (pool.length < needed) {
+      var el = document.createElement('div');
+      el.className = 'item';
+      el.style.height = ITEM_H + 'px';
+      el.innerHTML = '<div class="item-card"></div>';
+      els.listContent.appendChild(el);
+      pool.push(el);
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function renderItem(node, item, idx) {
+    var card = node.firstElementChild;
+    var lokasi = [item.KABUPATEN, item.KECAMATAN, item.KELURAHAN].filter(Boolean).join(', ');
+    var kartuLabel = item.JML_KARTU > 1 ? 'SENSOR' : 'TUNGGAL';
+    var kartuBadge = item.JML_KARTU > 1 ? 'badge warn' : 'badge ok';
+    var saldoStr = 'Rp ' + fmtNumber(item.SALDO);
+
+    card.innerHTML = '<div class="item-lokasi">' + escapeHtml(lokasi || '-') + '</div>' +
+      '<div class="item-row"><span class="item-label">NIK</span><span class="item-value">' + escapeHtml(item.NIK || '-') + '</span><button class="copy-btn" data-copy="nik" title="Salin">&#128203;</button></div>' +
+      '<div class="item-row"><span class="item-label">KPJ</span><span class="item-value">' + escapeHtml(item.KPJ || '-') + '</span><button class="copy-btn" data-copy="kpj" title="Salin">&#128203;</button></div>' +
+      '<div class="item-row"><span class="item-label">NAMA</span><span class="item-value">' + escapeHtml(item.NAMA_OSS || '-') + '</span><button class="copy-btn" data-copy="nama" title="Salin">&#128203;</button></div>' +
+      '<div class="item-row"><span class="item-label">INFO</span><span class="item-value">' + escapeHtml(item.KELAMIN || '-') + ' ' + escapeHtml(item.TANGGAL_LAHIR || '') + '</span><button class="copy-btn" data-copy="info" title="Salin">&#128203;</button></div>' +
+      '<div class="item-row" style="justify-content:space-between;">' +
+        '<span class="item-saldo">' + saldoStr + '</span>' +
+        '<span style="display:flex;gap:4px;">' +
+          '<span class="' + kartuBadge + '">' + kartuLabel + '</span>' +
+          '<span class="badge ok">LAYAK</span>' +
+          '<span class="badge">BELUM_TERDAFTAR</span>' +
+        '</span>' +
+      '</div>' +
+      '<div class="item-actions">' +
+        '<button data-act="copy">Copy</button>' +
+        '<button data-act="edit">Edit</button>' +
+        '<button data-act="del">Hapus</button>' +
+      '</div>';
+
+    card.querySelectorAll('.copy-btn').forEach(function(btn) {
+      btn.onclick = function(e) { e.stopPropagation(); copyItemPart(item, btn.dataset.copy); };
+    });
+    card.querySelector('[data-act="copy"]').onclick = function(e) { e.stopPropagation(); copyItemFull(item); };
+    card.querySelector('[data-act="edit"]').onclick = function(e) { e.stopPropagation(); openEdit(item.id); };
+    card.querySelector('[data-act="del"]').onclick = function(e) { e.stopPropagation(); deleteItem(item.id); };
+  }
+
+  function updateList() {
+    var scrollTop = els.listContainer.scrollTop;
+    var H = els.listContainer.clientHeight;
+    var start = Math.max(0, Math.floor(scrollTop / ITEM_H) - 3);
+    var end = Math.min(displayData.length, Math.ceil((scrollTop + H) / ITEM_H) + 3);
+    var needed = end - start;
+
+    for (var i = 0; i < pool.length; i++) {
+      if (i < needed) {
+        pool[i].style.display = 'block';
+        pool[i].style.transform = 'translateY(' + ((start + i) * ITEM_H) + 'px)';
+        renderItem(pool[i], displayData[start + i], start + i);
+      } else {
+        pool[i].style.display = 'none';
       }
     }
-    if(localStorage.getItem(LS_DARK)==='1'){
-      document.documentElement.classList.add('dark');
+  }
+
+  function refreshList() {
+    els.listContent.style.height = (displayData.length * ITEM_H) + 'px';
+    els.empty.style.display = displayData.length ? 'none' : 'block';
+    updateList();
+  }
+
+  function copyItemPart(item, part) {
+    var text = '';
+    if (part === 'nik') text = item.NIK;
+    else if (part === 'kpj') text = item.KPJ;
+    else if (part === 'nama') text = item.NAMA_OSS;
+    else if (part === 'info') text = (item.KELAMIN + ' ' + item.TANGGAL_LAHIR).trim();
+    copyToClipboard(text);
+  }
+
+  function buildCopyText(item) {
+    var lokasi = [item.KABUPATEN, item.KECAMATAN, item.KELURAHAN].filter(Boolean).join(', ');
+    var kartuLabel = item.JML_KARTU > 1 ? 'SENSOR' : 'TUNGGAL';
+    var saldoStr = 'Rp ' + fmtNumber(item.SALDO);
+    return '*' + lokasi + '*\n\n' + item.NIK + '\n' + item.KELAMIN + '\n' + item.TANGGAL_LAHIR + '\n\n' + kartuLabel + '\n' + saldoStr + '\n' + (item.PERUSAHAAN || 'N/A') + '\nN/A 01-\n\nQwer123@\n' + item.KPJ + '\n' + item.NAMA_OSS;
+  }
+
+  function copyItemFull(item) {
+    copyToClipboard(buildCopyText(item));
+  }
+
+  function copyAll() {
+    if (!displayData.length) return toast('Tidak ada data', 'error');
+    var parts = displayData.map(buildCopyText);
+    copyToClipboard(parts.join('\n\n==========\n\n'));
+    toast('Semua data disalin (' + displayData.length + ')');
+  }
+
+  var editFields = ['NIK','KPJ','NAMA_OSS','TANGGAL_LAHIR','KELAMIN','NOTIF','PESAN_PENGKINIAN','SALDO','JML_KARTU','KABUPATEN','KECAMATAN','KELURAHAN','STATUS_AKUN','PERUSAHAAN'];
+
+  function openEdit(id) {
+    var item = allData.find(function(x) { return x.id === id; });
+    if (!item) return;
+    editId = id;
+    els.editBody.innerHTML = editFields.map(function(f) {
+      var val = item[f] !== undefined ? item[f] : '';
+      var type = f === 'SALDO' || f === 'JML_KARTU' ? 'number' : 'text';
+      return '<div class="form-group"><label>' + f + '</label><input type="' + type + '" id="edit-' + f + '" value="' + escapeHtml(val) + '"></div>';
+    }).join('');
+    els.modalEdit.classList.add('show');
+  }
+
+  function saveEdit() {
+    var item = allData.find(function(x) { return x.id === editId; });
+    if (!item) return;
+    editFields.forEach(function(f) {
+      var el = $('edit-' + f);
+      if (!el) return;
+      var v = el.value;
+      if (f === 'SALDO') v = parseSaldo(v);
+      if (f === 'JML_KARTU') v = parseInt(v) || 0;
+      item[f] = v;
+    });
+    closeEdit();
+    refreshList();
+    saveData();
+    toast('Data diperbarui');
+  }
+
+  function closeEdit() { els.modalEdit.classList.remove('show'); editId = null; }
+
+  function deleteItem(id) {
+    var idx = allData.findIndex(function(x) { return x.id === id; });
+    if (idx === -1) return;
+    var item = allData[idx];
+    deletedStack.push(item);
+    allData.splice(idx, 1);
+
+    var dIdx = displayData.findIndex(function(x) { return x.id === id; });
+    if (dIdx !== -1) displayData.splice(dIdx, 1);
+
+    refreshList();
+    updateStats();
+    saveData();
+    showUndo('Data dihapus. ' + (item.NAMA_OSS || ''));
+  }
+
+  function showUndo(text) {
+    els.undoText.textContent = text;
+    els.undoBar.classList.add('show');
+    setTimeout(function() { els.undoBar.classList.remove('show'); }, 5000);
+  }
+
+  function undoDelete() {
+    if (!deletedStack.length) return;
+    var item = deletedStack.pop();
+    allData.push(item);
+    applySearchSort();
+    refreshList();
+    updateStats();
+    saveData();
+    toast('Undo berhasil');
+    els.undoBar.classList.remove('show');
+  }
+
+  var searchDebounce;
+  function onSearch() {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(function() {
+      applySearchSort();
+      refreshList();
+    }, 300);
+  }
+
+  function applySearchSort() {
+    var term = els.search.value.trim().toLowerCase();
+    if (!term) {
+      displayData = allData.slice();
+    } else {
+      displayData = allData.filter(function(item) {
+        for (var i = 0; i < editFields.length; i++) {
+          if (String(item[editFields[i]] || '').toLowerCase().indexOf(term) !== -1) return true;
+        }
+        return false;
+      });
     }
-  }catch(e){ console.error(e); }
-}
+    if (sortCol) {
+      displayData.sort(function(a,b) {
+        var av = a[sortCol], bv = b[sortCol];
+        if (typeof av === 'string') av = av.toLowerCase();
+        if (typeof bv === 'string') bv = bv.toLowerCase();
+        if (av == null) av = '';
+        if (bv == null) bv = '';
+        if (av < bv) return sortAsc ? -1 : 1;
+        if (av > bv) return sortAsc ? 1 : -1;
+        return 0;
+      });
+    }
+  }
 
-/* ===================== CORE: EXTRACT ===================== */
-function extractItem(row, colMap){
-  const get = col=>{
-    const idx=colMap[col];
-    return idx!==undefined?String(row[idx]??'').trim():'';
-  };
-  const status=normalizeText(get('STATUS_AKUN'));
-  const pesan=normalizeText(get('PESAN_PENGKINIAN'));
-  const saldoRaw=get('SALDO');
-  const saldoNum=parseSaldo(saldoRaw);
-  if(status!=='BELUMTERDAFTAR') return null;
-  if(pesan!=='LAYAK') return null;
-  if(saldoNum<1000000) return null;
-  const jml=parseInt(String(get('JML_KARTU')).replace(/\D/g,''))||0;
-  return {
-    id: Date.now()+Math.random().toString(36).slice(2),
-    nik:get('NIK'), kpj:get('KPJ'), namaOss:get('NAMA_OSS'),
-    tglLahir:get('TANGGAL_LAHIR'), kelamin:get('KELAMIN'),
-    notif:get('NOTIF'), pesanPengkinian:get('PESAN_PENGKINIAN'),
-    saldo:saldoRaw, saldoNum, jmlKartu:jml,
-    kabupaten:get('KABUPATEN'), kecamatan:get('KECAMATAN'), kelurahan:get('KELURAHAN'),
-    statusAkun:get('STATUS_AKUN'), perusahaan:get('PERUSAHAAN'),
-    tunggalSensor: jml<=1?'TUNGGAL':'SENSOR'
-  };
-}
+  function toggleSort() {
+    var cols = editFields;
+    if (!sortCol) { sortCol = 'SALDO'; sortAsc = false; }
+    else {
+      var idx = cols.indexOf(sortCol);
+      if (idx === -1 || idx === cols.length - 1) { sortCol = null; }
+      else { sortCol = cols[idx + 1]; sortAsc = true; }
+    }
+    applySearchSort();
+    refreshList();
+    toast(sortCol ? 'Sort: ' + sortCol + (sortAsc ? ' asc' : ' desc') : 'Sort reset');
+  }
 
-/* ===================== PARSING: XLSX ===================== */
-async function parseXLSX(file, signal, prog){
-  return new Promise((resolve,reject)=>{
-    const reader=new FileReader();
-    reader.onload=async e=>{
-      try{
-        if(signal.aborted){ resolve(); return; }
-        const data=new Uint8Array(e.target.result);
-        // yield supaya UI tidak freeze setelah FileReader
-        await new Promise(r=>setTimeout(r,0));
-        if(!window.XLSX){ throw new Error('Library XLSX tidak tersedia'); }
-        const wb=XLSX.read(data,{type:'array',cellFormula:false,cellHTML:false,cellNF:false,cellStyles:false});
-        let fileRead=0,filePass=0,fileSaldo=0;
-        const tempRows=[];
-        for(const sn of wb.SheetNames){
-          if(signal.aborted) break;
-          const ws=wb.Sheets[sn];
-          if(!ws||!ws['!ref']) continue;
-          const range=XLSX.utils.decode_range(ws['!ref']);
-          const hdrRow=XLSX.utils.sheet_to_json(ws,{header:1,range:0,defval:''})[0]||[];
-          const colMap={};
-          hdrRow.forEach((h,idx)=>{
-            const uh=String(h).trim().toUpperCase();
-            if(REQUIRED_COLS.includes(uh)) colMap[uh]=idx;
-          });
-          if(Object.keys(colMap).length===0) continue;
-          const totalRows=Math.max(1,range.e.r-range.s.r);
-          const BATCH=800;
-          for(let r=range.s.r+1;r<=range.e.r;r+=BATCH){
-            if(signal.aborted) break;
-            const endR=Math.min(r+BATCH-1,range.e.r);
-            const sub={s:{c:range.s.c,r:r},e:{c:range.e.c,r:endR}};
-            const rows=XLSX.utils.sheet_to_json(ws,{header:1,range:sub,defval:''});
-            for(const row of rows){
-              const it=extractItem(row,colMap);
-              if(it){ tempRows.push(it); filePass++; fileSaldo+=it.saldoNum; }
-              fileRead++;
+  function updateStats() {
+    els.stats.files.textContent = fmtNumber(totalFiles);
+    els.stats.read.textContent = fmtNumber(totalRead);
+    els.stats.lolos.textContent = fmtNumber(allData.length);
+    els.stats.saldo.textContent = 'Rp ' + fmtNumber(allData.reduce(function(a,b) { return a + (b.SALDO || 0); }, 0));
+  }
+
+  function resetStats() {
+    totalFiles = 0; totalRead = 0; totalLolos = 0; totalSaldo = 0;
+  }
+
+  function processFiles(files) {
+    if (isProcessing) return;
+    isProcessing = true;
+    els.progressArea.style.display = 'block';
+    els.btnCancel.disabled = false;
+    resetStats();
+    totalFiles = files.length;
+    updateStats();
+
+    var current = 0;
+    function processNext() {
+      if (current >= files.length || (processor && processor.cancelled)) {
+        finishProcess();
+        return;
+      }
+      var file = files[current];
+      var ext = file.name.split('.').pop().toLowerCase();
+      els.progFile.textContent = file.name;
+      els.progTotal.textContent = 'File ' + (current + 1) + ' dari ' + files.length;
+      updateProgress(0);
+
+      if (['xlsx','xls'].indexOf(ext) !== -1) {
+        processXLSX(file, function(pct, read, lolos, saldo) {
+          updateProgress(pct);
+          if (read !== undefined) { totalRead += read; totalLolos += lolos; totalSaldo += saldo; }
+          updateStats();
+        }, function() {
+          current++;
+          processNext();
+        });
+      } else if (['csv','txt'].indexOf(ext) !== -1) {
+        processCSV(file, function(pct, read, lolos, saldo) {
+          updateProgress(pct);
+          if (read !== undefined) { totalRead += read; totalLolos += lolos; totalSaldo += saldo; }
+          updateStats();
+        }, function() {
+          current++;
+          processNext();
+        });
+      } else {
+        current++;
+        processNext();
+      }
+    }
+
+    processor = { cancelled: false };
+    processNext();
+  }
+
+  function updateProgress(pct) {
+    els.progFill.style.width = pct + '%';
+    els.progCurr.textContent = Math.round(pct) + '%';
+  }
+
+  function finishProcess() {
+    isProcessing = false;
+    els.progressArea.style.display = 'none';
+    applySearchSort();
+    refreshList();
+    saveData();
+    toast('Selesai memproses ' + totalFiles + ' file');
+  }
+
+  function processXLSX(file, onProg, onDone) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var data = new Uint8Array(e.target.result);
+        var wb = XLSX.read(data, {type: 'array', cellFormula: false, cellHTML: false});
+        var ws = wb.Sheets[wb.SheetNames[0]];
+        var range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+        var totalRows = range.e.r - range.s.r;
+
+        var headers = [];
+        for (var c = range.s.c; c <= range.e.c; c++) {
+          var cell = ws[XLSX.utils.encode_cell({r: range.s.r, c: c})];
+          headers.push(cell ? String(cell.v).trim().toUpperCase() : '');
+        }
+        var cmap = mapColumns(headers);
+
+        var read = 0, lolos = 0, saldoSum = 0;
+        var row = range.s.r + 1;
+
+        function chunk() {
+          if (processor.cancelled) { onDone(); return; }
+          var end = Math.min(row + 800, range.e.r + 1);
+
+          for (; row < end; row++) {
+            var item = {};
+            for (var k in cmap) {
+              var cell = ws[XLSX.utils.encode_cell({r: row, c: cmap[k]})];
+              item[k] = cell ? cell.v : '';
             }
-            const pct=Math.min(100,Math.round(((r-range.s.r)/totalRows)*100));
-            prog.update(`Memproses ${sn}: ${fileRead} baris (${filePass} lolos)`,pct);
-            await new Promise(r=>setTimeout(r,0)); // yield ke UI
+            read++;
+            var norm = normalizeRow(item);
+            if (isLolos(norm)) {
+              norm.id = generateId();
+              allData.push(norm);
+              lolos++; saldoSum += norm.SALDO;
+            }
+          }
+
+          onProg(Math.min(100, (read / totalRows) * 100), 0, 0, 0);
+
+          if (row <= range.e.r) {
+            setTimeout(chunk, 0);
+          } else {
+            onProg(100, read, lolos, saldoSum);
+            onDone();
           }
         }
-        if(!signal.aborted){
-          mergeTemp(tempRows,fileSaldo);
-          totalRead+=fileRead;
-        }
-        resolve();
-      }catch(err){ reject(err); }
+        chunk();
+      } catch(err) {
+        toast('Error baca XLSX: ' + err.message, 'error');
+        onDone();
+      }
     };
-    reader.onerror=()=>reject(new Error('Gagal membaca file'));
     reader.readAsArrayBuffer(file);
+  }
+
+  function processCSV(file, onProg, onDone) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var text = e.target.result;
+        var lines = text.split(/\r?\n/);
+        var total = lines.length - 1;
+
+        var headers = lines[0].split(',').map(function(h) { return h.trim().toUpperCase(); });
+        var cmap = mapColumns(headers);
+
+        var read = 0, lolos = 0, saldoSum = 0;
+        var idx = 1;
+
+        function chunk() {
+          if (processor.cancelled) { onDone(); return; }
+          var end = Math.min(idx + 1000, lines.length);
+
+          for (; idx < end; idx++) {
+            var line = lines[idx].trim();
+            if (!line) continue;
+            var cols = line.split(',');
+            var item = {};
+            for (var k in cmap) {
+              item[k] = cols[cmap[k]] !== undefined ? cols[cmap[k]] : '';
+            }
+            read++;
+            var norm = normalizeRow(item);
+            if (isLolos(norm)) {
+              norm.id = generateId();
+              allData.push(norm);
+              lolos++; saldoSum += norm.SALDO;
+            }
+          }
+
+          onProg(Math.min(100, (idx / total) * 100), 0, 0, 0);
+
+          if (idx < lines.length) {
+            setTimeout(chunk, 0);
+          } else {
+            onProg(100, read, lolos, saldoSum);
+            onDone();
+          }
+        }
+        chunk();
+      } catch(err) {
+        toast('Error baca CSV: ' + err.message, 'error');
+        onDone();
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function mapColumns(headers) {
+    var map = {};
+    function find(name) {
+      for (var i = 0; i < headers.length; i++) {
+        if (headers[i] === name) return i;
+      }
+      return -1;
+    }
+    map.NIK = find('NIK'); map.KPJ = find('KPJ'); map.NAMA_OSS = find('NAMA_OSS');
+    map.TANGGAL_LAHIR = find('TANGGAL_LAHIR'); map.KELAMIN = find('KELAMIN');
+    map.NOTIF = find('NOTIF'); map.PESAN_PENGKINIAN = find('PESAN_PENGKINIAN');
+    map.SALDO = find('SALDO'); map.JML_KARTU = find('JML_KARTU');
+    map.KABUPATEN = find('KABUPATEN'); map.KECAMATAN = find('KECAMATAN');
+    map.KELURAHAN = find('KELURAHAN'); map.STATUS_AKUN = find('STATUS_AKUN');
+    map.PERUSAHAAN = find('PERUSAHAAN');
+    return map;
+  }
+
+  function normalizeRow(row) {
+    return {
+      NIK: String(row.NIK || ''),
+      KPJ: String(row.KPJ || ''),
+      NAMA_OSS: String(row.NAMA_OSS || ''),
+      TANGGAL_LAHIR: String(row.TANGGAL_LAHIR || ''),
+      KELAMIN: String(row.KELAMIN || ''),
+      NOTIF: String(row.NOTIF || ''),
+      PESAN_PENGKINIAN: String(row.PESAN_PENGKINIAN || ''),
+      SALDO: parseSaldo(row.SALDO),
+      JML_KARTU: parseInt(String(row.JML_KARTU || '').replace(/\D/g,''),10) || 0,
+      KABUPATEN: String(row.KABUPATEN || ''),
+      KECAMATAN: String(row.KECAMATAN || ''),
+      KELURAHAN: String(row.KELURAHAN || ''),
+      STATUS_AKUN: String(row.STATUS_AKUN || ''),
+      PERUSAHAAN: String(row.PERUSAHAAN || 'N/A')
+    };
+  }
+
+  function exportXLSX() {
+    if (!displayData.length) return toast('Tidak ada data', 'error');
+    var aoa = [editFields];
+    displayData.forEach(function(item) {
+      aoa.push(editFields.map(function(f) { return item[f]; }));
+    });
+    var ws = XLSX.utils.aoa_to_sheet(aoa);
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Data');
+    XLSX.writeFile(wb, 'data_filter_' + new Date().toISOString().slice(0,10) + '.xlsx');
+    toast('Export XLSX berhasil');
+  }
+
+  function exportCSV() {
+    if (!displayData.length) return toast('Tidak ada data', 'error');
+    var csv = editFields.join(',') + '\n';
+    displayData.forEach(function(item) {
+      csv += editFields.map(function(f) {
+        var v = String(item[f] || '').replace(/"/g,'""');
+        return '"' + v + '"';
+      }).join(',') + '\n';
+    });
+    downloadBlob(csv, 'data_filter_' + new Date().toISOString().slice(0,10) + '.csv', 'text/csv');
+    toast('Export CSV berhasil');
+  }
+
+  function exportTXT() {
+    if (!displayData.length) return toast('Tidak ada data', 'error');
+    var txt = displayData.map(buildCopyText).join('\n\n==========\n\n');
+    downloadBlob(txt, 'data_filter_' + new Date().toISOString().slice(0,10) + '.txt', 'text/plain');
+    toast('Export TXT berhasil');
+  }
+
+  function downloadBlob(text, filename, type) {
+    var blob = new Blob([text], {type: type});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  els.fileInput.addEventListener('change', function(e) {
+    if (e.target.files.length) processFiles(Array.from(e.target.files));
+    e.target.value = '';
   });
-}
 
-/* ===================== PARSING: CSV/TXT ===================== */
-function parseCSVLine(line){
-  const res=[]; let cur='', inQ=false;
-  for(let i=0;i<line.length;i++){
-    const ch=line[i];
-    if(ch==='"'){
-      if(inQ&&line[i+1]==='"'){ cur+='"'; i++; }
-      else inQ=!inQ;
-    }else if(ch===','&&!inQ){ res.push(cur.trim()); cur=''; }
-    else cur+=ch;
-  }
-  res.push(cur.trim());
-  return res;
-}
-function parseDelimitedLine(line){
-  if(line.includes('\t')) return line.split('\t').map(s=>s.trim());
-  return parseCSVLine(line);
-}
-async function parseCSV(file, signal, prog){
-  const reader=file.stream().getReader();
-  const decoder=new TextDecoder();
-  let buf='', fileRead=0, filePass=0, fileSaldo=0;
-  let colMap=null, headerParsed=false;
-  const tempRows=[];
-  const flushBatch=()=>{
-    for(const row of tempRows){
-      const it=extractItem(row,colMap);
-      if(it){ tempRows._push?.(it); filePass++; fileSaldo+=it.saldoNum; }
-      fileRead++;
-    }
-    tempRows.length=0;
-  };
-  while(true){
-    const {done,value}=await reader.read();
-    if(done){
-      if(buf.trim()){
-        const lines=buf.split(/\r?\n/);
-        for(const line of lines){
-          if(!line.trim()) continue;
-          if(!headerParsed){
-            const hdr=parseDelimitedLine(line);
-            colMap={};
-            hdr.forEach((h,idx)=>{ const uh=String(h).trim().toUpperCase(); if(REQUIRED_COLS.includes(uh)) colMap[uh]=idx; });
-            headerParsed=true;
-          }else tempRows.push(parseDelimitedLine(line));
-        }
-      }
-      flushBatch();
-      break;
-    }
-    buf+=decoder.decode(value,{stream:true});
-    const lines=buf.split(/\r?\n/);
-    buf=lines.pop();
-    for(const line of lines){
-      if(!line.trim()) continue;
-      if(!headerParsed){
-        const hdr=parseDelimitedLine(line);
-        colMap={};
-        hdr.forEach((h,idx)=>{ const uh=String(h).trim().toUpperCase(); if(REQUIRED_COLS.includes(uh)) colMap[uh]=idx; });
-        headerParsed=true;
-      }else{
-        tempRows.push(parseDelimitedLine(line));
-        if(tempRows.length>=600){
-          flushBatch();
-          prog.update(`Memproses: ${fileRead} baris (${filePass} lolos)`,0);
-          if(signal.aborted) return;
-          await new Promise(r=>setTimeout(r,0));
-        }
-      }
-    }
-  }
-  if(!signal.aborted){
-    mergeTemp(tempRows,fileSaldo);
-    totalRead+=fileRead;
-  }
-}
+  els.dropzone.addEventListener('dragover', function(e) { e.preventDefault(); els.dropzone.classList.add('dragover'); });
+  els.dropzone.addEventListener('dragleave', function() { els.dropzone.classList.remove('dragover'); });
+  els.dropzone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    els.dropzone.classList.remove('dragover');
+    var files = Array.from(e.dataTransfer.files).filter(function(f) { return /\.(xlsx|xls|csv|txt)$/i.test(f.name); });
+    if (files.length) processFiles(files);
+  });
 
-function mergeTemp(tempRows,fileSaldo){
-  for(const it of tempRows){
-    const k=(it.nik+'|'+it.kpj).trim();
-    if(k&&k!=='|'&&duplicateSet.has(k)) continue;
-    if(k&&k!=='|') duplicateSet.add(k);
-    allData.push(it);
-  }
-  totalSaldo+=fileSaldo;
-}
+  els.btnCancel.addEventListener('click', function() {
+    if (processor) processor.cancelled = true;
+    els.btnCancel.disabled = true;
+  });
 
-/* ===================== PROGRESS UI ===================== */
-function createProgress(file){
-  const id='p_'+Math.random().toString(36).slice(2);
-  const div=document.createElement('div');
-  div.className='progress-item'; div.id=id;
-  div.innerHTML=`<div class="progress-header"><span>${escapeHtml(file.name)}</span><span class="prog-st">Menunggu...</span></div><div class="progress-bar"><div class="progress-fill"></div></div>`;
-  progressArea.appendChild(div);
-  const fill=div.querySelector('.progress-fill');
-  const st=div.querySelector('.prog-st');
-  return {
-    update:(msg,pct)=>{ st.textContent=msg; if(pct!==undefined) fill.style.width=pct+'%'; },
-    done:()=>{ fill.style.width='100%'; st.textContent='Selesai'; setTimeout(()=>div.remove(),1200); },
-    error:(msg)=>{ st.textContent=msg; fill.style.background='var(--danger)'; },
-    remove:()=>div.remove()
-  };
-}
+  els.search.addEventListener('input', onSearch);
+  $('btn-sort').addEventListener('click', toggleSort);
+  $('btn-clear').addEventListener('click', function() {
+    if (!confirm('Hapus semua data?')) return;
+    allData.length = 0;
+    displayData.length = 0;
+    deletedStack.length = 0;
+    nextId = 1;
+    resetStats();
+    updateStats();
+    refreshList();
+    saveData();
+    toast('Data dikosongkan');
+  });
 
-/* ===================== FILE HANDLER ===================== */
-async function handleFiles(files){
-  if(isProcessing) return;
-  if(!files.length) return;
-  isProcessing=true;
-  btnCancel.disabled=false;
-  abortCtrl=new AbortController();
-  const signal=abortCtrl.signal;
-  totalFiles+=files.length;
-  updateStats();
-  for(const file of files){
-    if(signal.aborted) break;
-    const prog=createProgress(file);
-    try{
-      const ext=file.name.split('.').pop().toLowerCase();
-      if(file.size>60*1024*1024){ prog.error('File >60MB dilewati'); continue; }
-      if(['xlsx','xls'].includes(ext)){
-        await parseXLSX(file,signal,prog);
-      }else if(['csv','txt'].includes(ext)){
-        await parseCSV(file,signal,prog);
-      }else{
-        prog.error('Format tidak didukung');
-      }
-      if(!signal.aborted) prog.done();
-    }catch(err){
-      prog.error('Error: '+err.message);
-    }
-  }
-  isProcessing=false;
-  btnCancel.disabled=true;
-  abortCtrl=null;
-  applySearchSort();
-  renderList();
-  updateStats();
-  saveToStorage();
-}
+  $('btn-dark').addEventListener('click', function() {
+    document.documentElement.classList.toggle('dark');
+  });
 
-/* ===================== VIRTUAL LIST ===================== */
-function renderList(){
-  if(!displayData.length){
-    listPhantom.style.height='0px';
-    listContent.innerHTML='';
-    emptyState.style.display='block';
-    return;
-  }
-  emptyState.style.display='none';
-  const totalH=displayData.length*ITEM_HEIGHT;
-  listPhantom.style.height=totalH+'px';
-  requestAnimationFrame(()=>renderWindow());
-}
-function renderWindow(){
-  const scrollTop=listContainer.scrollTop;
-  const start=Math.max(0,Math.floor(scrollTop/ITEM_HEIGHT)-BUFFER);
-  const visible=Math.ceil(listContainer.clientHeight/ITEM_HEIGHT);
-  const end=Math.min(displayData.length,start+visible+BUFFER*2);
-  const offsetY=start*ITEM_HEIGHT;
-  listContent.style.transform=`translateY(${offsetY}px)`;
-  const frag=document.createDocumentFragment();
-  for(let i=start;i<end;i++){
-    frag.appendChild(createCard(displayData[i]));
-  }
-  listContent.innerHTML='';
-  listContent.appendChild(frag);
-}
-function createCard(it){
-  const div=document.createElement('div');
-  div.className='item-card';
-  div.dataset.id=it.id;
-  div.innerHTML=
-    `<div class="item-lokasi">*${escapeHtml(it.kabupaten)}, ${escapeHtml(it.kecamatan)}, ${escapeHtml(it.kelurahan)}*</div>
-     <div class="item-row"><span class="label">NIK:</span> <span class="val">${escapeHtml(it.nik)}</span></div>
-     <div class="item-row"><span class="label">KPJ:</span> <span class="val">${escapeHtml(it.kpj)}</span></div>
-     <div class="item-row"><span class="label">NAMA:</span> <span class="val">${escapeHtml(it.namaOss)}</span></div>
-     <div class="item-row"><span class="label">KELAMIN:</span> ${escapeHtml(it.kelamin)} <span class="label" style="margin-left:8px">LAHIR:</span> ${escapeHtml(it.tglLahir)}</div>
-     <div class="item-row"><span class="label">SALDO:</span> <span class="val">Rp ${it.saldoNum.toLocaleString('id-ID')}</span> <span class="badge ${it.tunggalSensor==='TUNGGAL'?'badge-tunggal':'badge-sensor'}">${it.tunggalSensor}</span></div>
-     <div class="item-actions">
-       <button class="btn btn-copy" data-act="copy">📋</button>
-       <button class="btn" data-act="edit">✏️</button>
-       <button class="btn btn-danger" data-act="del">🗑️</button>
-     </div>`;
-  return div;
-}
-let scrollRAF;
-listContainer.addEventListener('scroll',()=>{
-  if(scrollRAF) cancelAnimationFrame(scrollRAF);
-  scrollRAF=requestAnimationFrame(renderWindow);
-});
-window.addEventListener('resize',renderList);
+  $('btn-copy-all').addEventListener('click', copyAll);
+  $('btn-export').addEventListener('click', function() { els.modalExport.classList.add('show'); });
+  $('btn-close-export').addEventListener('click', function() { els.modalExport.classList.remove('show'); });
+  $('exp-xlsx').addEventListener('click', function() { exportXLSX(); els.modalExport.classList.remove('show'); });
+  $('exp-csv').addEventListener('click', function() { exportCSV(); els.modalExport.classList.remove('show'); });
+  $('exp-txt').addEventListener('click', function() { exportTXT(); els.modalExport.classList.remove('show'); });
 
-/* ===================== SEARCH & SORT ===================== */
-function applySearchSort(){
-  const term=searchInput.value.trim().toLowerCase();
-  if(!term){
-    displayData=allData.slice();
-  }else{
-    displayData=allData.filter(it=>{
-      return (it.nik&&it.nik.toLowerCase().includes(term))||
-             (it.kpj&&it.kpj.toLowerCase().includes(term))||
-             (it.namaOss&&it.namaOss.toLowerCase().includes(term))||
-             (it.kabupaten&&it.kabupaten.toLowerCase().includes(term))||
-             (it.kecamatan&&it.kecamatan.toLowerCase().includes(term))||
-             (it.kelurahan&&it.kelurahan.toLowerCase().includes(term));
-    });
-  }
-  const col=sortSelect.value;
-  if(col){
-    const dir=sortState.col===col&&sortState.dir==='asc'?'desc':'asc';
-    sortState={col,dir};
-    displayData.sort((a,b)=>{
-      let av=a[col],bv=b[col];
-      if(typeof av==='string') av=av.toLowerCase();
-      if(typeof bv==='string') bv=bv.toLowerCase();
-      if(av==null) av='';
-      if(bv==null) bv='';
-      if(av<bv) return dir==='asc'?-1:1;
-      if(av>bv) return dir==='asc'?1:-1;
-      return 0;
-    });
-  }
-  renderList();
-}
-const debouncedSearch=debounce(applySearchSort,300);
-searchInput.addEventListener('input',debouncedSearch);
-sortSelect.addEventListener('change',applySearchSort);
+  $('btn-save-edit').addEventListener('click', saveEdit);
+  $('btn-cancel-edit').addEventListener('click', closeEdit);
+  $('btn-close-edit').addEventListener('click', closeEdit);
+  els.modalEdit.addEventListener('click', function(e) { if (e.target === els.modalEdit) closeEdit(); });
+  els.modalExport.addEventListener('click', function(e) { if (e.target === els.modalExport) els.modalExport.classList.remove('show'); });
 
-/* ===================== ACTIONS: COPY / EDIT / DEL ===================== */
-function getCopyText(it){
-  return `*${it.kabupaten}, ${it.kecamatan}, ${it.kelurahan}*\n\n${it.nik}\n${it.kelamin}\n${it.tglLahir}\n\n${it.tunggalSensor}\nRp ${it.saldoNum.toLocaleString('id-ID')}\n${it.perusahaan}\nN/A 01-\n\nQwer123@\n${it.kpj}\n${it.namaOss}`;
-}
-async function copyItem(id){
-  const it=allData.find(x=>x.id===id);
-  if(!it) return;
-  const txt=getCopyText(it);
-  try{ await navigator.clipboard.writeText(txt); showStatus('Disalin ke clipboard','success'); }
-  catch(_){
-    const ta=document.createElement('textarea'); ta.value=txt;
-    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-    showStatus('Disalin (fallback)','success');
-  }
-}
-function deleteItem(id){
-  const idx=allData.findIndex(x=>x.id===id);
-  if(idx===-1) return;
-  const it=allData[idx];
-  deletedStack.push(it);
-  if(deletedStack.length>MAX_UNDO) deletedStack.shift();
-  allData.splice(idx,1);
-  const k=(it.nik+'|'+it.kpj).trim();
-  if(k&&k!=='|') duplicateSet.delete(k);
-  totalSaldo-=it.saldoNum;
-  applySearchSort();
-  updateStats();
-  saveToStorage();
-  btnUndo.disabled=false;
-  showStatus('Data dihapus. Klik Undo untuk membatalkan.','warn');
-}
-function undoDelete(){
-  if(!deletedStack.length){ btnUndo.disabled=true; return; }
-  const it=deletedStack.pop();
-  const k=(it.nik+'|'+it.kpj).trim();
-  if(k&&k!=='|'){
-    if(duplicateSet.has(k)){ showStatus('Data duplikat, tidak bisa undo','warn'); return; }
-    duplicateSet.add(k);
-  }
-  allData.push(it);
-  totalSaldo+=it.saldoNum;
-  applySearchSort();
-  updateStats();
-  saveToStorage();
-  if(!deletedStack.length) btnUndo.disabled=true;
-  showStatus('Undo berhasil','success');
-}
-function openEdit(id){
-  const it=allData.find(x=>x.id===id);
-  if(!it) return;
-  editingId=id;
-  $('edit-nik').value=it.nik;
-  $('edit-kpj').value=it.kpj;
-  $('edit-namaOss').value=it.namaOss;
-  $('edit-tglLahir').value=it.tglLahir;
-  $('edit-kelamin').value=it.kelamin;
-  $('edit-saldo').value=it.saldo;
-  $('edit-jmlKartu').value=it.jmlKartu;
-  $('edit-kabupaten').value=it.kabupaten;
-  $('edit-kecamatan').value=it.kecamatan;
-  $('edit-kelurahan').value=it.kelurahan;
-  $('edit-perusahaan').value=it.perusahaan;
-  modalEdit.classList.add('show');
-}
-function saveEdit(){
-  const it=allData.find(x=>x.id===editingId);
-  if(!it) return;
-  const oldSaldo=it.saldoNum;
-  it.nik=$('edit-nik').value.trim();
-  it.kpj=$('edit-kpj').value.trim();
-  it.namaOss=$('edit-namaOss').value.trim();
-  it.tglLahir=$('edit-tglLahir').value.trim();
-  it.kelamin=$('edit-kelamin').value.trim();
-  it.saldo=$('edit-saldo').value.trim();
-  it.saldoNum=parseSaldo(it.saldo);
-  it.jmlKartu=parseInt($('edit-jmlKartu').value)||0;
-  it.kabupaten=$('edit-kabupaten').value.trim();
-  it.kecamatan=$('edit-kecamatan').value.trim();
-  it.kelurahan=$('edit-kelurahan').value.trim();
-  it.perusahaan=$('edit-perusahaan').value.trim();
-  it.tunggalSensor=it.jmlKartu<=1?'TUNGGAL':'SENSOR';
-  totalSaldo+=it.saldoNum-oldSaldo;
-  modalEdit.classList.remove('show');
-  applySearchSort();
-  updateStats();
-  saveToStorage();
-  showStatus('Data diperbarui','success');
-}
+  $('btn-undo').addEventListener('click', undoDelete);
 
-listContent.addEventListener('click',e=>{
-  const btn=e.target.closest('button');
-  if(!btn) return;
-  const card=btn.closest('.item-card');
-  if(!card) return;
-  const id=card.dataset.id;
-  const act=btn.dataset.act;
-  if(act==='copy') copyItem(id);
-  else if(act==='edit') openEdit(id);
-  else if(act==='del') deleteItem(id);
-});
+  els.listContainer.addEventListener('scroll', function() {
+    window.requestAnimationFrame(updateList);
+  }, {passive: true});
 
-/* ===================== GLOBAL ACTIONS ===================== */
-btnCancel.addEventListener('click',()=>{
-  if(abortCtrl){ abortCtrl.abort(); abortCtrl=null; }
-  isProcessing=false; btnCancel.disabled=true;
-  showStatus('Proses dibatalkan','warn');
-});
-btnUndo.addEventListener('click',undoDelete);
-btnClear.addEventListener('click',()=>{
-  if(!allData.length) return;
-  if(!confirm('Hapus SEMUA data?')) return;
-  allData=[]; displayData=[]; duplicateSet.clear(); deletedStack=[];
-  totalRead=0; totalFiles=0; totalSaldo=0; totalPass=0;
-  localStorage.removeItem(LS_KEY);
-  renderList(); updateStats(); showStatus('Semua data dihapus','success');
-});
-btnDark.addEventListener('click',()=>{
-  const is=document.documentElement.classList.toggle('dark');
-  localStorage.setItem(LS_DARK,is?'1':'0');
-});
-btnCopyAll.addEventListener('click',async ()=>{
-  if(!displayData.length){ showStatus('Tidak ada data untuk disalin','warn'); return; }
-  // Build in chunks to avoid freeze
-  let txt='', i=0, BATCH=3000;
-  function build(){
-    const end=Math.min(i+BATCH,displayData.length);
-    for(;i<end;i++) txt+=getCopyText(displayData[i])+'\n\n';
-    if(i<displayData.length){ setTimeout(build,0); }
-    else{
-      navigator.clipboard.writeText(txt).then(()=>showStatus(`${displayData.length} data disalin`,'success')).catch(()=>showStatus('Gagal salin','error'));
-    }
-  }
-  build();
-});
+  window.addEventListener('resize', function() {
+    initPool();
+    refreshList();
+  });
 
-/* ===================== EXPORT ===================== */
-btnExportXLSX.addEventListener('click',()=>{
-  if(!window.XLSX){ showStatus('Library XLSX tidak tersedia','error'); return; }
-  if(!displayData.length){ showStatus('Tidak ada data','warn'); return; }
-  const hdr=['NIK','KPJ','NAMA_OSS','TANGGAL_LAHIR','KELAMIN','NOTIF','PESAN_PENGKINIAN','SALDO','JML_KARTU','KABUPATEN','KECAMATAN','KELURAHAN','STATUS_AKUN','PERUSAHAAN'];
-  const rows=displayData.map(it=>[it.nik,it.kpj,it.namaOss,it.tglLahir,it.kelamin,it.notif,it.pesanPengkinian,it.saldo,it.jmlKartu,it.kabupaten,it.kecamatan,it.kelurahan,it.statusAkun,it.perusahaan]);
-  const ws=XLSX.utils.aoa_to_sheet([hdr,...rows]);
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Data');
-  XLSX.writeFile(wb,'bpjs_data.xlsx');
-  showStatus('XLSX diekspor','success');
-});
-btnExportCSV.addEventListener('click',()=>{
-  if(!displayData.length){ showStatus('Tidak ada data','warn'); return; }
-  const hdr=['NIK','KPJ','NAMA_OSS','TANGGAL_LAHIR','KELAMIN','NOTIF','PESAN_PENGKINIAN','SALDO','JML_KARTU','KABUPATEN','KECAMATAN','KELURAHAN','STATUS_AKUN','PERUSAHAAN'];
-  let csv='\uFEFF'+hdr.join(',')+'\n', i=0, BATCH=5000;
-  function build(){
-    const end=Math.min(i+BATCH,displayData.length);
-    for(;i<end;i++){
-      const it=displayData[i];
-      const r=[it.nik,it.kpj,it.namaOss,it.tglLahir,it.kelamin,it.notif,it.pesanPengkinian,it.saldo,it.jmlKartu,it.kabupaten,it.kecamatan,it.kelurahan,it.statusAkun,it.perusahaan]
-        .map(f=>`"${String(f??'').replace(/"/g,'""')}"`).join(',');
-      csv+=r+'\n';
-    }
-    if(i<displayData.length){ setTimeout(build,0); }
-    else{ downloadBlob(csv,'bpjs_data.csv','text/csv;charset=utf-8'); showStatus('CSV diekspor','success'); }
-  }
-  build();
-});
-btnExportTXT.addEventListener('click',()=>{
-  if(!displayData.length){ showStatus('Tidak ada data','warn'); return; }
-  let txt='', i=0, BATCH=3000;
-  function build(){
-    const end=Math.min(i+BATCH,displayData.length);
-    for(;i<end;i++) txt+=getCopyText(displayData[i])+'\n\n';
-    if(i<displayData.length){ setTimeout(build,0); }
-    else{ downloadBlob(txt,'bpjs_data.txt','text/plain'); showStatus('TXT diekspor','success'); }
-  }
-  build();
-});
-
-/* ===================== EDIT MODAL ===================== */
-$('edit-close').addEventListener('click',()=>modalEdit.classList.remove('show'));
-$('edit-save').addEventListener('click',saveEdit);
-modalEdit.addEventListener('click',e=>{ if(e.target===modalEdit) modalEdit.classList.remove('show'); });
-
-/* ===================== DRAG & DROP ===================== */
-dropZone.addEventListener('dragover',e=>{ e.preventDefault(); dropZone.classList.add('dragover'); });
-dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('dragover'));
-dropZone.addEventListener('drop',e=>{
-  e.preventDefault();
-  dropZone.classList.remove('dragover');
-  handleFiles(e.dataTransfer.files);
-});
-fileInput.addEventListener('change',e=>handleFiles(e.target.files));
-
-/* ===================== STATS ===================== */
-function updateStats(){
-  $('st-files').textContent=totalFiles;
-  $('st-read').textContent=totalRead.toLocaleString('id-ID');
-  $('st-pass').textContent=allData.length.toLocaleString('id-ID');
-  $('st-saldo').textContent='Rp '+totalSaldo.toLocaleString('id-ID');
-}
-
-/* ===================== INIT ===================== */
-function init(){
-  loadFromStorage();
-  updateStats();
-  renderList();
-}
-init();
+  initPool();
+  loadData();
+  refreshList();
 
 })();
 </script>
